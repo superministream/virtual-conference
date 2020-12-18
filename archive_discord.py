@@ -5,8 +5,7 @@ import discord
 import core.schedule as schedule
 import core.auth as conf_auth
 
-# This bot monitors all channels in the guild for Zoom links and
-# warns people to make sure they set a password and waiting room
+# This script is used to archive a discord channel to a JSON file
 if len(sys.argv) != 2:
     print("Usage: {} <discord guild id>".format(sys.argv[0]))
     sys.exit(1)
