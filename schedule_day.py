@@ -15,6 +15,13 @@ if len(sys.argv) < 6:
     print("Usage: {} <data sheet.xlsx> <day> <discord guild id> <thumbnail file> <font root>".format(sys.argv[0]))
     sys.exit(1)
 
+def getNextAvailableMachine(computers, time):
+    for computer_id in computers.keys():
+        avail_at, pc_id = computers[computer_id]
+        if(avail_at <= time):
+            return pc_id
+    return None
+
 discord_guild_id = sys.argv[3]
 thumbnail_params = {
     "background": sys.argv[4],
@@ -31,7 +38,10 @@ database.populate_stream_key_ids()
 day = database.get_day(sys.argv[2])
 sessions = day.get_sessions(False)
 
-computers = []
+event_dict = {}
+
+computer_dict = {}
+
 for c in database.computers.items():
     if not c["Youtube Stream Key ID"].value:
         print("Failed to get stream key ID for computer {}, aborting!".format(c["ID"].value))
@@ -40,27 +50,34 @@ for c in database.computers.items():
     avail_at = datetime(schedule.CONFERENCE_YEAR, day.month, day.day, hour=0, minute=1, tzinfo=schedule.conf_tz)
     # We also include the ID as a tiebreaker for when all the computers have the same time,
     # since the dicts are not comparable
-    heappush(computers, (avail_at, c["ID"].value, c))
+    computer_dict[c["ID"].value] = (avail_at, c["ID"].value)
 
 for k, v in sessions.items():
-    avail_at, pc_id, next_computer = heappop(computers)
     session_time = v.session_time()
+    if(v.event not in event_dict.keys()):
+        event_dict[v.event] = getNextAvailableMachine(computer_dict, session_time[0] - v.setup_time())
+    current_computer = event_dict[v.event]
+    avail_at, pc_id = computer_dict[current_computer]
     # We need some setup time ahead of the session's start time to do A/V check with the presenters
     need_at = session_time[0] - v.setup_time()
+    if(avail_at > need_at):
+        print("Parallel session of same type?")
+        current_computer = getNextAvailableMachine(computer_dict, session_time[0] - v.setup_time())
+        avail_at, pc_id = computer_dict[current_computer]
     if avail_at > need_at:
         print("The next available computer isn't available until {},".format(schedule.format_time(avail_at)) + \
               " which is after the next session {} - {} that needs a computer for setup starting at: {}!"
               .format(v.event, v.name, schedule.format_time(need_at)))
         sys.exit(1)
 
-    print("Session streams on computer {}".format(next_computer["ID"].value))
-    v.create_virtual_session(next_computer["ID"].value, thumbnail_params)
+    print("Session streams on computer {}".format(pc_id))
+    v.create_virtual_session(pc_id, thumbnail_params)
     print(v)
-    database.save(sys.argv[2] + "_scheduled.xlsx")
+    database.save("../../Schedule/" + sys.argv[2] + "_scheduled.xlsx")
     print("------")
     # The computer is available again 10 minutes after this session ends for buffer
     avail_at = session_time[1] + timedelta(minutes=10)
-    heappush(computers, (avail_at, pc_id, next_computer))
+    computer_dict[current_computer] = (avail_at, pc_id)
 
 if "--no-discord" in sys.argv:
     print("Not creating Discord channels")
@@ -83,16 +100,20 @@ async def on_ready():
         discord_invite = unlimited_invite[0]
 
     # Make a category for each event and a general channel for the event
+    # Store Session Category in Events set
     events = set()
     for k, v in sessions.items():
         events.add(v.chat_category_name())
 
     event_categories = {}
+    # Store Event Category in dict (create it, if it doesn't exist yet)
     for e in events:
         event_category = [ec for ec in guild.categories if ec.name == e]
         if len(event_category) == 0:
+            # Create new Discord Category if it doesn't exist yet
             event_categories[e] = await guild.create_category(e)
         else:
+            # Store Discord Category, if it already exists
             event_categories[e] = event_category[0]
 
     for k, v in sessions.items():
@@ -123,7 +144,7 @@ async def on_ready():
         v.update_youtube_broadcast_description()
 
     print("Saving database")
-    database.save(sys.argv[2] + "_scheduled.xlsx")
+    database.save("../../Schedule/" + sys.argv[2] + "_scheduled.xlsx")
     print("Setup complete, hit ctrl-c to end bot and exit")
 
 client.run(database.auth.discord["bot_token"])
