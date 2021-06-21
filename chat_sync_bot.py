@@ -11,6 +11,10 @@ from googleapiclient.errors import HttpError
 import core.schedule as schedule
 import core.bot_base as base
 
+if(not "DATA_FOLDER" in os.environ):
+    print("You must set $DATA_FOLDER to a folder which contains the working data of this tool.")
+    sys.exit(1)
+
 class Bot:
     # Create a bot to manage polls and sync the chat between the youtube and discord chats
     def __init__(self, youtube_chat_id, youtube, discord_channel, discord):
@@ -26,7 +30,7 @@ class Bot:
 
     def get_filter_users(self):
         # The user discriminators to not sync
-        file_name = "chat_sync_filter_users.json"
+        file_name = os.environ["DATA_FOLDER"] + "/chat_sync_filter_users.json"
         if not os.path.isfile(file_name):
             return []
 
@@ -187,7 +191,7 @@ async def on_ready():
             print(v.event_session_title())
             await channel.send("The chat will now be synchronized bidirectionally with YouTube")
             # NOTE: You'll want to update this information with where your warn zoom links/nosync bot is watching for $nosync commands
-            await channel.send("You can prevent synchronization by prefixing your message with the - character, or completely by typing $nosync in #support")
+            await channel.send("You can prevent synchronization by prefixing your message with the - character, or completely by typing $nosync in #youtube-sync-commands")
             bots.append(Bot(youtube_chat_id, database.auth.youtube, channel, client))
 
 @client.event
@@ -197,7 +201,6 @@ async def on_message(msg):
 
     channel_bot = [b for b in bots if b.discord_channel.id == msg.channel.id]
     if len(channel_bot) == 0:
-        print("No bot handling channel {} (id: {})".format(msg.channel.name, msg.channel.id))
         return
 
     await channel_bot[0].on_discord_message(msg)
