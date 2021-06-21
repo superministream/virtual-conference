@@ -27,7 +27,6 @@ client = discord.Client()
 
 brute_force_protection_file_name = os.environ["DATA_FOLDER"] + "/brute_force_protection.dat"
 # The keys of this dictionary should have the same name as the roles on your Discord.
-# Also make sure there is no '\n' at the end of your tokens in the file.
 token_file_names = {"Attendee": os.environ["DATA_FOLDER"] + "/Attendee_Tokens.txt", 
                     "Chair": os.environ["DATA_FOLDER"] + "/Chair_Tokens.txt",
                     "Speaker": os.environ["DATA_FOLDER"] + "/Speaker_Tokens.txt"}
@@ -65,7 +64,7 @@ async def on_message(msg):
         f = open(token_file_names[group], "r")
         tokens = f.readlines()
         f.close()
-        if(msg.content in tokens):
+        if(msg.content + "\n" in tokens):
             print(str(group) + " token detected.")
             tokens.remove(msg.content + "\n")
             
