@@ -11,8 +11,12 @@ import core.schedule as schedule
 # for each session in your conference and assign them to specific computers for streaming
 # during the event.
 
-if len(sys.argv) < 6:
-    print("Usage: {} <data sheet.xlsx> <day> <discord guild id> <thumbnail file> <font root>".format(sys.argv[0]))
+if(not "DATA_FOLDER" in os.environ):
+    print("You must set $DATA_FOLDER to a folder which contains the working data of this tool.")
+    sys.exit(1)
+
+if len(sys.argv) < 5:
+    print("Usage: {} <data sheet.xlsx> <day> <thumbnail file> <font root>".format(sys.argv[0]))
     sys.exit(1)
 
 def getNextAvailableMachine(computers, time):
@@ -22,13 +26,17 @@ def getNextAvailableMachine(computers, time):
             return pc_id
     return None
 
-discord_guild_id = sys.argv[3]
+f = open(os.environ["DATA_FOLDER"] + "/discordIDs.dat", "rb")
+discordIDs = pickle.load(f)
+f.close()
+
+discord_guild_id = discordIDs["Server"]
 thumbnail_params = {
-    "background": sys.argv[4],
+    "background": sys.argv[3],
     # NOTE: You'll want to change these font file names with the ones you're using
     # in your streaming software.
-    "bold_font": os.path.join(sys.argv[5], "MPLUSRounded1c-Black.ttf"),
-    "regular_font": os.path.join(sys.argv[5], "MPLUSRounded1c-Regular.ttf")
+    "bold_font": os.path.join(sys.argv[4], "MPLUSRounded1c-Black.ttf"),
+    "regular_font": os.path.join(sys.argv[4], "MPLUSRounded1c-Regular.ttf")
 }
 
 database = schedule.Database(sys.argv[1], youtube=True, use_pickled_credentials=True)
