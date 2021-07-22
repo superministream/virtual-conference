@@ -29,7 +29,7 @@ database.populate_stream_key_ids()
 day = database.get_day(sys.argv[2])
 
 time_end = None
-if sys.argv[3] != "none":
+if sys.argv[3].lower() != "none":
     time_end = datetime(schedule.CONFERENCE_YEAR, day.month, day.day,
             hour=int(sys.argv[3][0:2]), minute=int(sys.argv[3][2:4]), tzinfo=schedule.conf_tz)
 else:
@@ -37,7 +37,7 @@ else:
             hour=0, minute=1, tzinfo=schedule.conf_tz)
 
 time_start = None
-if sys.argv[4] != "none":
+if sys.argv[4].lower() != "none":
     time_start = datetime(schedule.CONFERENCE_YEAR, day.month, day.day,
             hour=int(sys.argv[4][0:2]), minute=int(sys.argv[4][2:4]), tzinfo=schedule.conf_tz)   
 else:
@@ -78,6 +78,7 @@ client = discord.Client()
 async def on_ready():
     embed = schedule.base_discord_embed()
     embed["title"] = "The Session has Ended"
+    embed["description"] = "Feel free to continue discussing in this channel."
 
     for s in end_sessions:
         if not s.has_discord_channel():
@@ -89,6 +90,7 @@ async def on_ready():
             session_info = await channel[0].send(embed=discord.Embed.from_dict(embed))
 
     embed["title"] = "The Session is Starting"
+    embed["description"] = ""
     for s in start_sessions:
         if not s.has_discord_channel():
             continue
