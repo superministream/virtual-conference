@@ -152,7 +152,7 @@ async def on_ready():
         v.update_youtube_broadcast_description()
 
     print("Saving database")
-    database.save("../../Schedule/" + sys.argv[2] + "_scheduled.xlsx")
+    database.save(sys.argv[2] + "_scheduled.xlsx")
     print("Setup complete, hit ctrl-c to end bot and exit")
 
 client.run(database.auth.discord["bot_token"])
