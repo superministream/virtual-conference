@@ -72,6 +72,9 @@ for s in start_sessions:
     s.start_streaming()
     print("-----")
 
+print("DEBUG: Not running Discord bot") 
+sys.exit(0)
+
 # Annoying but have to run bot to post the starting/ending messages
 client = discord.Client()
 @client.event

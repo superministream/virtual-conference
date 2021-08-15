@@ -10,8 +10,9 @@ import core.schedule as schedule
 # This script will create the YouTube broadcasts, Zoom Meetings and Discord channels
 # for each session in your conference and assign them to specific computers for streaming
 # during the event.
+setup_discord = not "--no-discord" in sys.argv
 
-if(not "DATA_FOLDER" in os.environ):
+if setup_discord and not "DATA_FOLDER" in os.environ:
     print("You must set $DATA_FOLDER to a folder which contains the working data of this tool.")
     sys.exit(1)
 
@@ -26,18 +27,22 @@ def getNextAvailableMachine(computers, time):
             return pc_id
     return None
 
-f = open(os.environ["DATA_FOLDER"] + "/discordIDs.dat", "rb")
-discordIDs = pickle.load(f)
-f.close()
+discord_guild_id = None
+if setup_discord:
+    f = open(os.environ["DATA_FOLDER"] + "/discordIDs.dat", "rb")
+    discordIDs = pickle.load(f)
+    f.close()
+    discord_guild_id = discordIDs["Server"]
 
-discord_guild_id = discordIDs["Server"]
-thumbnail_params = {
-    "background": sys.argv[3],
+# Off for testing
+thumbnail_params = None
+#thumbnail_params = {
+#    "background": sys.argv[3],
     # NOTE: You'll want to change these font file names with the ones you're using
     # in your streaming software.
-    "bold_font": os.path.join(sys.argv[4], "MPLUSRounded1c-Black.ttf"),
-    "regular_font": os.path.join(sys.argv[4], "MPLUSRounded1c-Regular.ttf")
-}
+    #"bold_font": os.path.join(sys.argv[4], "MPLUSRounded1c-Black.ttf"),
+    #"regular_font": os.path.join(sys.argv[4], "MPLUSRounded1c-Regular.ttf")
+#}
 
 database = schedule.Database(sys.argv[1], youtube=True, use_pickled_credentials=True)
 # Fill in the computer stream key IDs
@@ -81,13 +86,13 @@ for k, v in sessions.items():
     print("Session streams on computer {}".format(pc_id))
     v.create_virtual_session(pc_id, thumbnail_params)
     print(v)
-    database.save("../../Schedule/" + sys.argv[2] + "_scheduled.xlsx")
+    database.save(sys.argv[2] + "_scheduled.xlsx")
     print("------")
     # The computer is available again 10 minutes after this session ends for buffer
     avail_at = session_time[1] + timedelta(minutes=10)
     computer_dict[current_computer] = (avail_at, pc_id)
 
-if "--no-discord" in sys.argv:
+if not setup_discord:
     print("Not creating Discord channels")
     sys.exit(0)
 
