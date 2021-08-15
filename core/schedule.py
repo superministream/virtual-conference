@@ -166,7 +166,7 @@ class Database:
         # Note: if more than 50 stream keys in the account, have to request multiple
         # pages of results using the page tokens
         live_streams = self.auth.youtube.liveStreams().list(
-            part="snippet,cdn,contentDetails,status",
+            part="id,snippet,cdn,status",
             mine=True,
             maxResults=50).execute()
         for c in self.computers.items():
