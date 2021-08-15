@@ -1,6 +1,7 @@
 import re
 import os
 import sys
+import time
 import pprint
 import json
 import requests
@@ -26,14 +27,14 @@ import core.thumbnail as thumbnail
 conf_tz = timezone(-timedelta(hours=6))
 
 # Your conference name
-CONFERENCE_NAME = "Conference 2020"
+CONFERENCE_NAME = "VIS Testing 2021"
 # NOTE: This should be a URL to a wide aspect ratio conference logo image
 # See the image at the URL for an example
 CONFERENCE_LOGO_URL = "https://i.imgur.com/amRNJoR.png"
 # NOTE: This should be a URL to your a square conference icon image
 # See the image at the URL for an example
 CONFERENCE_ICON_URL = "https://i.imgur.com/amRNJoR.png"
-CONFERENCE_YEAR = 2020
+CONFERENCE_YEAR = 2021
 
 match_timeslot = re.compile("(\d\d)(\d\d)-(\d\d)(\d\d)")
 
@@ -269,11 +270,15 @@ class Session:
                 notes.add("Uses custom title image")
         return notes
 
+    def get_stream_key(self):
+        computer = self.timeslot_entry(0, "Computer").value
+        return self.day.database.get_computer(computer)["Youtube Stream Key"].value
+
     def get_stream_status(self):
         computer = self.timeslot_entry(0, "Computer").value
-        stream_key = self.day.database.get_computer(computer)["Youtube Stream Key ID"].value
+        stream_key_id = self.day.database.get_computer(computer)["Youtube Stream Key ID"].value
         response = self.auth.youtube.liveStreams().list(
-            id=stream_key,
+            id=stream_key_id,
             part="status"
         ).execute()
         return response["items"][0]["status"]["streamStatus"], response["items"][0]["status"]["healthStatus"]["status"]
@@ -307,22 +312,12 @@ class Session:
         stream_key = computer_info["Youtube Stream Key"].value
         stream_key_id = computer_info["Youtube Stream Key ID"].value
 
-        stream_status, stream_health = self.get_stream_status()
         broadcast_status = self.get_broadcast_status()
         # Broadcast could be in the ready state (configured and a stream key was bound),
         # or in the created state (configured but no stream key attached yet).
         if broadcast_status != "ready" and broadcast_status != "created":
             print("Broadcast {} is in state {}, and cannot be (re-)made live".format(self.youtube_broadcast_id(), broadcast_status))
             return
-
-        if stream_status != "active":
-            print("Stream on computer {} (key {}) for broadcast {} is not active (currently {}), broadcast cannot be made live".format(
-                computer, stream_key, self.youtube_broadcast_id(), stream_status))
-            return
-
-        if stream_health != "good":
-            print("WARNING: Stream on computer {} (key {}) is active, but not healthy. Health status is {}".format(
-                computer, stream_key, stream_health))
 
         # Attach the stream to the broadcast
         print("Attaching stream '{}' to '{}'".format(stream_key, self.youtube_broadcast_id()))
@@ -331,6 +326,33 @@ class Session:
             part="status",
             streamId=stream_key_id,
         ).execute()
+
+        # Start the Zoom meeting livestream
+        zoom_params = {
+            "action": "start"
+        }
+        requests.patch("https://api.zoom.us/v2/meetings/{}/livestream/status".format(self.get_zoom_meeting_id()),
+            json=zoom_params, headers=self.auth.zoom)
+
+        # Wait about 10s for the Zoom stream to connect
+        print("Sleeping 10s for Zoom live stream to begin")
+        time.sleep(10)
+
+        # Check the status of the live stream to make sure it's running before we make it live
+        retries = 0
+        stream_status, stream_health = self.get_stream_status()
+        if stream_status != "active":
+            print(f"Stream on computer {computer} (key {stream_key}) for" +
+                f"broadcast {self.youtube_broadcast_id()} is not active (currently {stream_status})." +
+                "will wait 10s longer for Zoom and retry")
+            time.sleep(10)
+            retries = retries + 1
+            if retries >= 2:
+                print(f"Retried {retries} times and zoom stream is still not live!?")
+
+        if stream_health != "good":
+            print("WARNING: Stream on computer {} (key {}) is active, but not healthy. Health status is {}".format(
+                computer, stream_key, stream_health))
 
         # Make the broadcast live
         self.auth.youtube.liveBroadcasts().transition(
@@ -373,8 +395,7 @@ class Session:
             part="status"
         ).execute()
 
-        # Enable embedding the archived livestream, since with a new account
-        # we can't embed the live stream itself
+        # Make sure the video archive is also embeddable
         self.auth.youtube.videos().update(
             part="id,contentDetails,status",
             body={
@@ -384,6 +405,13 @@ class Session:
                 }
             }
         ).execute()
+
+        # Stop the Zoom meeting livestream
+        zoom_params = {
+            "action": "stop"
+        }
+        requests.patch("https://api.zoom.us/v2/meetings/{}/livestream/status".format(self.get_zoom_meeting_id()),
+            json=zoom_params, headers=self.auth.zoom)
 
     # Create the virtual aspects of the session to be streamed by the specified computer
     def create_virtual_session(self, computer, thumbnail_params):
@@ -410,6 +438,11 @@ class Session:
                 host = user["id"]
             else:
                 alternative_hosts.append(user["id"])
+        # For testing: if user doesn't exist just take the first one (i.e., on my account)
+        if not host:
+            print("WARNING: TESTING CODE in schedule_zoom: Picking first host after not finding track ID Zoom host")
+            host = r["users"][0]["id"]
+            alternative_hosts = []
 
         session_time = self.session_time()
         # Zoom meetings start 15min ahead of time to set up, and can run 10min over
@@ -453,7 +486,20 @@ class Session:
             }
         }
 
-        zoom_info = requests.post("https://api.zoom.us/v2/users/{}/meetings".format(host), json=meeting_info, headers=headers).json()
+        zoom_info = requests.post("https://api.zoom.us/v2/users/{}/meetings".format(host),
+                json=meeting_info, headers=headers).json()
+
+        # Set up the zoom meeting to live stream to our Youtube broadcast
+        livestream_info = {
+            "stream_url": "rtmp://a.rtmp.youtube.com/live2",
+            "stream_key": self.get_stream_key(),
+            "page_url": self.timeslot_entry(0, "Youtube Broadcast").value
+        }
+        add_livestream = requests.patch("https://api.zoom.us/v2/meetings/{}/livestream".format(zoom_info["id"]),
+                json=livestream_info, headers=headers)
+        if add_livestream.status_code != 204:
+            print(f"ERROR: Failed to set live stream for Zoom meeting {meeting_topic}")
+            sys.exit(1)
 
         # Fill in the Zoom info in the sheet
         for t in range(0, len(self.timeslots)):
@@ -461,10 +507,13 @@ class Session:
             self.timeslot_entry(t, "Zoom Meeting ID").value = str(zoom_info["id"])
             self.timeslot_entry(t, "Zoom Password").value = meeting_info["password"]
 
+    def get_zoom_meeting_id(self):
+        return self.timeslot_entry(0, "Zoom Meeting ID").value
+
     def get_zoom_meeting_info(self):
         # We don't keep this huge list of numbers in the spreadsheet, so we need to fetch it when needed
         headers = self.auth.zoom
-        meeting_id = self.timeslot_entry(0, "Zoom Meeting ID").value
+        meeting_id = self.get_zoom_meeting_id()
         meeting_info = requests.get("https://api.zoom.us/v2/meetings/{}".format(meeting_id), headers=headers).json()
         return meeting_info
 
@@ -492,7 +541,7 @@ class Session:
                     # Note: YouTube requires you to have 1k subscribers and 4k public watch hours
                     # to enable embedding live streams. You can set this to true if your account
                     # meets this requirement and you've enabled embedding live streams
-                    "enableEmbed": False,
+                    "enableEmbed": True,
                     "enableAutoStart": False,
                     "enableAutoEnd": False,
                     "recordFromStart": True,
@@ -510,7 +559,7 @@ class Session:
                     "description": description,
                 },
                 "status": {
-                    "privacyStatus": "public"
+                    "privacyStatus": "unlisted"
                 }
             }
         ).execute()
@@ -528,17 +577,18 @@ class Session:
         ).execute()
 
         # Render the thumbnail for the session and upload it
-        thumbnail_img = thumbnail.render_thumbnail(thumbnail_params["background"],
-                thumbnail_params["bold_font"],
-                thumbnail_params["regular_font"],
-                self.title_card_title(),
-                self.title_card_chair(),
-                self.title_card_schedule())
+        if thumbnail_params:
+            thumbnail_img = thumbnail.render_thumbnail(thumbnail_params["background"],
+                    thumbnail_params["bold_font"],
+                    thumbnail_params["regular_font"],
+                    self.title_card_title(),
+                    self.title_card_chair(),
+                    self.title_card_schedule())
 
-        self.auth.youtube.thumbnails().set(
-            videoId=broadcast_info["id"],
-            media_body=MediaIoBaseUpload(thumbnail_img, mimetype="image/png")
-        ).execute()
+            self.auth.youtube.thumbnails().set(
+                videoId=broadcast_info["id"],
+                media_body=MediaIoBaseUpload(thumbnail_img, mimetype="image/png")
+            ).execute()
 
         for t in range(0, len(self.timeslots)):
             self.timeslot_entry(t, "Youtube Control Room").value = \
