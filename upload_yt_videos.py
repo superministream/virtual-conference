@@ -1,7 +1,11 @@
 import sys
 import os
+import http.client
+import httplib2
+import time
 from docopt import docopt
 from apiclient.http import MediaFileUpload
+from apiclient.errors import HttpError
 
 import core.schedule as schedule
 import core.auth as conf_auth
@@ -21,9 +25,15 @@ video_table = video_db.get_table("Sheet1")
 video_root_path = arguments["<video_root_path>"]
 update_descriptions = not arguments["--no-update"]
 
+RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
+
+RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError, http.client.NotConnected,
+        http.client.IncompleteRead, http.client.ImproperConnectionState,
+        http.client.CannotSendRequest, http.client.CannotSendHeader,
+        http.client.ResponseNotReady, http.client.BadStatusLine)
+
 def upload_video(video, title, description, auth):
-    print("Uploading\ntitle = {}\nauthors = {}\nvideo = {}".format(title, authors, video))
-    upload_response = auth.youtube.videos().insert(
+    upload_request = auth.youtube.videos().insert(
         part="id,status,snippet",
         body = {
             "snippet": {
@@ -32,14 +42,46 @@ def upload_video(video, title, description, auth):
                 "categoryId": 27 # Category 27 is "education"
             },
             "status": {
-                "privacyStatus": "public",
+                "privacyStatus": "unlisted",
                 "selfDeclaredMadeForKids": False,
                 "embeddable": True
             }
         },
-        media_body=MediaFileUpload(video)
-    ).execute()
-    return upload_response
+        media_body=MediaFileUpload(video, chunksize=-1, resumable=True)
+    )
+
+    httplib2.RETRIES = 1
+    response = None
+    error = None
+    retries = 0
+    while not response:
+        try:
+            print(f"Uploading\ntitle = {title}\nauthors = {authors}\nvideo = {video}")
+            status, response = upload_request.next_chunk()
+            if response:
+                if "id" in response:
+                    print(f"Uploaded\ntitle = {title}\nauthors = {authors}\nvideo = {video}")
+                    return response
+                else:
+                    print("Upload failed with an unexpected response")
+                    return None
+        except HttpError as e:
+            if e.resp.status in RETRIABLE_STATUS_CODES:
+                error = f"Retriable HTTP error {e.resp.status}: {e.content}"
+            else:
+                raise e
+        except RETRIABLE_EXCEPTIONS as e:
+            error = f"A retriable exception occured {e}"
+
+        if error:
+            print(error)
+            retries += 1
+            if retries > 10:
+                print("Reached max retries, aborting")
+                break
+            time.sleep(1)
+
+    return None
 
 def update_video(video_id, title, description, auth):
     print("Updating\ntitle = {}\nauthors = {}\nvideo = {}".format(title, authors, video_id))
@@ -156,7 +198,6 @@ for r in range(2, video_table.table.max_row + 1):
             print("Failed to upload {}: {}".format(video, e))
             print("Stopping uploading")
             break
-            continue
 
         subtitles = video_info["Subtitles File"].value
         # Upload the subtitles
@@ -210,7 +251,7 @@ for pl, videos in playlists.items():
                     "title": pl
                 },
                 "status": {
-                    "privacyStatus": "public"
+                    "privacyStatus": "unlisted"
                 }
             }).execute()
         current_playlists[pl] = {
