@@ -24,7 +24,9 @@ import core.auth as conf_auth
 import core.thumbnail as thumbnail
 
 # Your conference time zone
-conf_tz = timezone(-timedelta(hours=6))
+# VIS2021 is in Lousiana end of Oct: Central Daylight Time
+# UTC-5
+conf_tz = timezone(-timedelta(hours=5))
 
 # Your conference name
 CONFERENCE_NAME = "VIS Testing 2021"
