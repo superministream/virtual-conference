@@ -26,7 +26,8 @@ event_calendars = {}
 
 paper_list = {}
 all_sessions = {}
-conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
+#conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
+conference_days = ["test-1-session"]
 for d in conference_days:
     print(d)
     day = database.get_day(d)
@@ -132,8 +133,8 @@ for d in conference_days:
 
                 # Check for the image file
                 submission_dir = None
-                if v.timeslot_entry(i, "Video File Name").value:
-                    submission_dir = os.path.dirname(os.path.join(img_asset_dir, v.timeslot_entry(i, "Video File Name").value))
+                if v.timeslot_entry(i, "Video Youtube ID").value:
+                    submission_dir = os.path.dirname(os.path.join(img_asset_dir, v.timeslot_entry(i, "Video Youtube ID").value))
                 else:
                     submission_dir = os.path.join(img_asset_dir, v.timeslot_entry(i, "Event Prefix").value + "/" + uid)
 
