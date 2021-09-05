@@ -20,13 +20,6 @@ if len(sys.argv) < 5:
     print("Usage: {} <data sheet.xlsx> <day> <thumbnail file> <font root>".format(sys.argv[0]))
     sys.exit(1)
 
-def getNextAvailableMachine(computers, time):
-    for computer_id in computers.keys():
-        avail_at, pc_id = computers[computer_id]
-        if(avail_at <= time):
-            return pc_id
-    return None
-
 discord_guild_id = None
 if setup_discord:
     f = open(os.environ["DATA_FOLDER"] + "/discordIDs.dat", "rb")
@@ -51,8 +44,6 @@ database.populate_stream_key_ids()
 day = database.get_day(sys.argv[2])
 sessions = day.get_sessions(False)
 
-event_dict = {}
-
 computer_dict = {}
 
 # TODO: Now the tracks are set by the program schedule and more fixed. So instead
@@ -70,20 +61,13 @@ for c in database.computers.items():
 
 for k, v in sessions.items():
     session_time = v.session_time()
-    if(v.event not in event_dict.keys()):
-        event_dict[v.event] = getNextAvailableMachine(computer_dict, session_time[0] - v.setup_time())
-    current_computer = event_dict[v.event]
-    avail_at, pc_id = computer_dict[current_computer]
+    session_track = v.get_track()
+    avail_at, pc_id = computer_dict[session_track]
     # We need some setup time ahead of the session's start time to do A/V check with the presenters
     need_at = session_time[0] - v.setup_time()
-    if(avail_at > need_at):
-        print("Parallel session of same type?")
-        current_computer = getNextAvailableMachine(computer_dict, session_time[0] - v.setup_time())
-        avail_at, pc_id = computer_dict[current_computer]
     if avail_at > need_at:
-        print("The next available computer isn't available until {},".format(schedule.format_time(avail_at)) + \
-              " which is after the next session {} - {} that needs a computer for setup starting at: {}!"
-              .format(v.event, v.name, schedule.format_time(need_at)))
+        print(f"Session {v.event} - {v.name} is scheduled to start at {schedule.format_time(need_at)} on " + \
+              f"track {session_track} but the Zoom/Track isn't available until {schedule.format_time(avail_at)}")
         sys.exit(1)
 
     print("Session streams on computer {}".format(pc_id))
@@ -93,7 +77,7 @@ for k, v in sessions.items():
     print("------")
     # The computer is available again 10 minutes after this session ends for buffer
     avail_at = session_time[1] + timedelta(minutes=10)
-    computer_dict[current_computer] = (avail_at, pc_id)
+    computer_dict[session_track] = (avail_at, pc_id)
 
 if not setup_discord:
     print("Not creating Discord channels")

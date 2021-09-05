@@ -228,6 +228,9 @@ class Session:
     def timeslot_time(self, t):
         return parse_time_slot(self.timeslot_entry(t, "Time Slot").value, self.day.month, self.day.day)
 
+    def get_track(self):
+        return self.timeslot_entry(0, "Computer").value
+
     # Get the (start, end) time of the entire session
     # The start time is the start of the first time slot in the session,
     # the end time is the end time of the last time slot
