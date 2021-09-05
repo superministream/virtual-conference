@@ -37,7 +37,7 @@ for event_prefix, event in schedule_json.items():
     for session in event["sessions"]:
         session["event_prefix"] = event_prefix
         session["event"] = event["event"]
-        session["session_id"] = event_prefix + session["session_id"]
+        session["session_id"] = event_prefix + "-" + session["session_id"]
         session["time_start"] = parse_time(session["time_start"])
         session["time_end"] = parse_time(session["time_end"])
         all_sessions.append(session)
@@ -45,11 +45,17 @@ for event_prefix, event in schedule_json.items():
 all_sessions.sort(key=lambda s: s["time_start"])
 
 database = schedule.Database(sys.argv[1])
+session_tracks = database.workbook.get_table("session-tracks")
 for session in all_sessions:
-    # The day has to be picked based on the conference time zone
     session_start = session["time_start"].astimezone(tz=schedule.conf_tz)
     day = database.get_day(day_name_for_date(session_start))
     for slot in session["time_slots"]:
+        track = session_tracks.find("Session ID", session["session_id"])
+        if len(track) != 1:
+            print(f"Error: No track or multiple found for session with id {session['session_id']}, title: {session['title']}")
+            sys.exit(1)
+        track = session_tracks.entry(track[0], "Track").value
+
         time_start = parse_time(slot["time_start"]).astimezone(tz=schedule.conf_tz)
         time_end = parse_time(slot["time_end"]).astimezone(tz=schedule.conf_tz)
         day.sheet.append_row({
@@ -60,6 +66,7 @@ for session in all_sessions:
             "Session": session["title"],
             "Time Slot Title": slot["title"],
             "Authors": "|".join(slot["contributors"]),
+            "Computer": track
         })
 
 database.save(sys.argv[3])

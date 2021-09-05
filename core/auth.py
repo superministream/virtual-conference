@@ -29,8 +29,12 @@ from google.auth.transport.requests import Request
 class Authentication:
     def __init__(self, youtube=False, email=False, use_pickled_credentials=False):
         # Setup API clients
-        if not "SUPERMINISTREAM_AUTH_FILE" in os.environ or not "YOUTUBE_AUTH_PICKLE_FILE" in os.environ:
-            print("You must set $SUPERMINISTREAM_AUTH_FILE to the json file containing your authentication credentials and $YOUTUBE_AUTH_PICKLE_FILE to the Youtube pickled auth file")
+        if not "SUPERMINISTREAM_AUTH_FILE" in os.environ:
+            print("You must set $SUPERMINISTREAM_AUTH_FILE to the json file containing your authentication credentials")
+            sys.exit(1)
+
+        if youtube and not "YOUTUBE_AUTH_PICKLE_FILE" in os.environ:
+            print("You must set $YOUTUBE_AUTH_PICKLE_FILE to the Youtube pickled auth file")
             sys.exit(1)
 
         auth_file = os.environ["SUPERMINISTREAM_AUTH_FILE"]
