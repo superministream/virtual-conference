@@ -55,6 +55,9 @@ event_dict = {}
 
 computer_dict = {}
 
+# TODO: Now the tracks are set by the program schedule and more fixed. So instead
+# of assigning computers they're already assigned and we just need to validate
+# there aren't any conflicts
 for c in database.computers.items():
     if not c["Youtube Stream Key ID"].value:
         print("Failed to get stream key ID for computer {}, aborting!".format(c["ID"].value))

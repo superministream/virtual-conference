@@ -28,6 +28,9 @@ sessions = day.get_sessions(False)
 
 event_dict = {}
 
+# TODO: Now the tracks are set by the program schedule and more fixed. So instead
+# of assigning computers they're already assigned and we just need to validate
+# there aren't any conflicts
 computer_dict = {}
 for c in database.computers.items():
     # All computers are initially marked as available starting at midnight
