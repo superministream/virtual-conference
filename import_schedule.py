@@ -64,8 +64,10 @@ for session in all_sessions:
             "Event Prefix": session["event_prefix"],
             "Session ID": session["session_id"],
             "Session": session["title"],
-            "Time Slot Title": slot["title"],
+            # Panels have an odd time slot title name in the JSON, so correct it here
+            "Time Slot Title": slot["title"] if slot["title"] != "Organizers" else session["title"],
             "Authors": "|".join(slot["contributors"]),
+            "Contributor(s)": "|".join(slot["contributors"]),
             "Computer": track
         })
 

@@ -26,8 +26,7 @@ event_calendars = {}
 
 paper_list = {}
 all_sessions = {}
-#conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
-conference_days = ["test-1-session"]
+conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for d in conference_days:
     print(d)
     day = database.get_day(d)
