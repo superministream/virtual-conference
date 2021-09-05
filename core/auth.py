@@ -3,6 +3,7 @@ import os
 import sys
 import boto3
 import pickle
+import eventbrite
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
@@ -24,10 +25,12 @@ from google.auth.transport.requests import Request
 #    },
 #    "zoom": {
 #        "jwt_token": {...}
-#    }
+#    },
+#    "eventbrite": ""
+#    "eventbrite_event_id": <number>
 # }
 class Authentication:
-    def __init__(self, youtube=False, email=False, use_pickled_credentials=False):
+    def __init__(self, youtube=False, email=False, use_pickled_credentials=False, eventbrite_api=False):
         # Setup API clients
         if not "SUPERMINISTREAM_AUTH_FILE" in os.environ:
             print("You must set $SUPERMINISTREAM_AUTH_FILE to the json file containing your authentication credentials")
@@ -58,6 +61,10 @@ class Authentication:
 
             if youtube:
                 self.youtube = self.authenticate_youtube(auth, use_pickled_credentials)
+
+            if eventbrite_api:
+                self.eventbrite = eventbrite.Eventbrite(auth["eventbrite"])
+                self.eventbrite_event_id = auth["eventbrite_event_id"]
 
     def authenticate_youtube(self, auth, use_pickled_credentials):
         yt_scopes = ["https://www.googleapis.com/auth/youtube",
