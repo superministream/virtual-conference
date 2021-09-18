@@ -583,12 +583,7 @@ class Session:
 
         # Render the thumbnail for the session and upload it
         if thumbnail_params:
-            thumbnail_img = thumbnail.render_thumbnail(thumbnail_params["background"],
-                    thumbnail_params["bold_font"],
-                    thumbnail_params["regular_font"],
-                    self.title_card_title(),
-                    self.title_card_chair(),
-                    self.title_card_schedule())
+            thumbnail_img = self.render_thumbnail(thumbnail_params)
 
             self.auth.youtube.thumbnails().set(
                 videoId=broadcast_info["id"],
@@ -617,6 +612,14 @@ class Session:
                 }
             }
         ).execute()
+
+    def render_thumbnail(self, thumbnail_params):
+        return thumbnail.render_thumbnail(thumbnail_params["background"],
+                thumbnail_params["bold_font"],
+                thumbnail_params["regular_font"],
+                self.title_card_title(),
+                self.title_card_chair(),
+                self.title_card_schedule())
 
     def chat_category_name(self):
         name = re.sub("\-+", "-", re.sub("[^0-9A-Za-z\- ]+", "", self.event.lower()))
