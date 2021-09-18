@@ -136,27 +136,9 @@ for d in conference_days:
                 if not authors:
                     print("Authors for {} are missing!".format(v.timeslot_entry(i, "UID").value))
 
-                # Check for the image file
-                submission_dir = None
-                if v.timeslot_entry(i, "Video File").value:
-                    submission_dir = os.path.dirname(os.path.join(img_asset_dir, v.timeslot_entry(i, "Video File").value))
-                else:
-                    submission_dir = os.path.join(img_asset_dir, v.timeslot_entry(i, "Event Prefix").value + "/" + uid)
-
-                # Find the image in the submission dir
-                image_name = None
-                if os.path.isdir(submission_dir):
-                    submission_files = os.listdir(submission_dir)
-                    img_extensions = [".png", ".jpg", ".jpeg", ".gif", ".bmp"]
-                    for f in submission_files:
-                        ext = os.path.splitext(f)[1].lower()
-                        if ext in img_extensions:
-                            image_name = os.path.join(submission_dir, f)
-                            break
-                    #if not image_name:
-                        #print("No image found for {}, submission files: {}".format(uid, submission_files))
-                else:
-                    print("Missing submission dir {}".format(submission_dir))
+                image_name = v.timeslot_entry(i, "Preview Image File").value
+                if image_name:
+                    image_name = os.path.join(img_asset_dir, image_name)
 
                 special_notes = v.timeslot_entry(i, "Special Notes").value
                 if special_notes:
@@ -187,8 +169,6 @@ for d in conference_days:
                     "ff_link": ff_link if ff_link else ""
                 }
 
-                #if not image_name:
-                #    print("No image found for uid: {}".format(uid))
                 if image_name and export_images:
                     out_path = os.path.join(output_dir, uid + ".png")
                     try:
