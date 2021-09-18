@@ -82,6 +82,8 @@ for d in conference_days:
         session_info = {
             "title": session_title,
             "session_id": session_id,
+            "track": v.timeslot_entry(0, "Computer").value,
+            "schedule_image": session_id + ".png",
             "chair": [],
             "organizers": organizers.split("|") if organizers else [],
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
@@ -111,12 +113,16 @@ for d in conference_days:
                 "contributors": v.timeslot_entry(i, "Contributor(s)").value.split("|"),
                 "abstract": v.timeslot_entry(i, "Abstract").value,
                 "time_start": schedule.format_time_iso8601_utc(timeslot_time[0]),
-                "time_end": schedule.format_time_iso8601_utc(timeslot_time[1])
+                "time_end": schedule.format_time_iso8601_utc(timeslot_time[1]),
             }
 
             uid = v.timeslot_entry(i, "UID").value
             if uid:
                 time_slot_info["uid"] = uid
+
+            talk_video_url = v.timeslot_entry(i, "Video Youtube ID").value
+            if talk_video_url:
+                time_slot_info["youtube_video_id"] = schedule.match_youtube_id(talk_video_url)
 
             session_info["time_slots"].append(time_slot_info)
 
