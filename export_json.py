@@ -120,7 +120,7 @@ for d in conference_days:
             if uid:
                 time_slot_info["uid"] = uid
 
-            talk_video_url = v.timeslot_entry(i, "Video Youtube ID").value
+            talk_video_url = v.timeslot_entry(i, "Youtube Video").value
             if talk_video_url:
                 time_slot_info["youtube_video_id"] = schedule.match_youtube_id(talk_video_url)
 
@@ -138,8 +138,8 @@ for d in conference_days:
 
                 # Check for the image file
                 submission_dir = None
-                if v.timeslot_entry(i, "Video Youtube ID").value:
-                    submission_dir = os.path.dirname(os.path.join(img_asset_dir, v.timeslot_entry(i, "Video Youtube ID").value))
+                if v.timeslot_entry(i, "Video File").value:
+                    submission_dir = os.path.dirname(os.path.join(img_asset_dir, v.timeslot_entry(i, "Video File").value))
                 else:
                     submission_dir = os.path.join(img_asset_dir, v.timeslot_entry(i, "Event Prefix").value + "/" + uid)
 
