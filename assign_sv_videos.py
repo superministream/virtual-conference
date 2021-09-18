@@ -14,7 +14,8 @@ import core.excel_db as excel_db
 # encoding errors. The script will also automatically check each video meets
 # certain criteria (resolution, encoding, length).
 
-match_presentation = re.compile(".*\.(mp4|mov)$")
+match_presentation = re.compile(".*_[pP]resentation.*")
+#match_presentation = re.compile(".*\.(mp4|mov)$")
 
 USAGE ="""
 Usage: assign_sv_videos.py already_assigned_list.json video_root_dir warnings_output.xlsx suffix [max talk length (minutes)]
@@ -39,8 +40,7 @@ class EncodingWarning(Enum):
     VIDEO_TOO_LONG = 7
 
     def is_error(self):
-        return self == EncodingWarning.RESOLUTION or self == EncodingWarning.MISSING_SUBTITLES \
-                or self == EncodingWarning.CORRUPT or self == EncodingWarning.VIDEO_TOO_LONG
+        return self == EncodingWarning.CORRUPT or self == EncodingWarning.VIDEO_TOO_LONG
 
 class Video:
     def __init__(self, filepath, mediainfo):
