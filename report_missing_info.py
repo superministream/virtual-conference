@@ -32,7 +32,7 @@ for r in range(2, slug_sheet.table.max_row + 1):
     }
 
 missing_videos_index = ["Event", "Session", "Time Slot Title",
-        "Video File Name", "Full Path", "Video Missing", "Subtitles Missing"]
+        "Video File", "Full Path", "Video Missing", "Subtitles Missing"]
 missing_info_index = ["Time Slot", "Event", "Session", "Time Slot Title", "Items Missing"]
 
 missing_items_db = excel_db.ExcelDb()
