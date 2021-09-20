@@ -25,6 +25,16 @@ video_table = video_db.get_table("Sheet1")
 video_root_path = arguments["<video_root_path>"]
 update_descriptions = not arguments["--no-update"]
 
+title_field = "Title"
+authors_field = "Authors"
+description_field = "Abstract"
+video_file_field = "Video File"
+subtitles_file_field = "Subtitles File"
+playlist_field = "Session"
+
+out_youtube_video_field = "Youtube Video"
+out_youtube_playlist_field = "Youtube Playlist"
+
 RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
 
 RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError, http.client.NotConnected,
@@ -124,14 +134,14 @@ def get_playlist_items(auth, playlist_id):
             break
     return all_items
 
-if not "Youtube Video" in video_table.index or not "Youtube Playlist" in video_table.index:
+if not out_youtube_video_field in video_table.index or not out_youtube_playlist_field in video_table.index:
     index = [None] * len(video_table.index)
     for k, v in video_table.index.items():
         index[v - 1] = k
-    if not "Youtube Video" in video_table.index:
-        index.append("Youtube Video")
-    if not "Youtube Playlist" in video_table.index:
-        index.append("Youtube Playlist")
+    if not out_youtube_video_field in video_table.index:
+        index.append(out_youtube_video_field)
+    if not out_youtube_playlist_field in video_table.index:
+        index.append(out_youtube_playlist_field)
     video_table.set_index(index)
 
 # Validate the input sheet
@@ -140,15 +150,15 @@ for r in range(2, video_table.table.max_row + 1):
     video_info = video_table.row(r)
     # If there's no video, or it was already uploaded, skip verifying the file
     # exists because we don't need it
-    if not video_info["Title"].value or video_info["Youtube Video"].value:
+    if not video_info[title_field].value or video_info[out_youtube_video_field].value:
         continue
-    video = os.path.join(video_root_path, video_info["Video File"].value)
+    video = os.path.join(video_root_path, video_info[video_file_field].value)
     if not os.path.isfile(video):
         all_files_found = False
         print("Video {} was not found".format(video))
-    subtitles = video_info["Subtitles File"].value
+    subtitles = video_info[subtitles_file_field].value
     if subtitles:
-        subtitles = os.path.join(video_root_path, video_info["Subtitles File"].value)
+        subtitles = os.path.join(video_root_path, video_info[subtitles_file_field].value)
         if not os.path.isfile(subtitles):
             all_files_found = False
             print("Subtitles {} were not found".format(subtitles))
@@ -173,44 +183,44 @@ for pl in yt_playlists:
 
 for r in range(2, video_table.table.max_row + 1):
     video_info = video_table.row(r)
-    if not video_info["Title"].value:
+    if not video_info[title_field].value:
         continue
-    title = schedule.make_youtube_title(video_info["Title"].value)
+    title = schedule.make_youtube_title(video_info[title_field].value)
 
-    authors = video_info["Authors"].value.replace("|", ", ")
+    authors = video_info[authors_field].value.replace("|", ", ")
     description = "Authors: " + authors
-    if video_info["Abstract/Description"].value:
-        description += "\n" + video_info["Abstract/Description"].value
+    if video_info[description_field].value:
+        description += "\n" + video_info[description_field].value
 
     # Make sure description text content is valid for Youtube
     description = schedule.make_youtube_description(description)
 
     # Upload the video
     video_id = None
-    if not video_info["Youtube Video"].value:
-        video = os.path.join(video_root_path, video_info["Video File"].value)
+    if not video_info[out_youtube_video_field].value:
+        video = os.path.join(video_root_path, video_info[video_file_field].value)
         try:
             upload_response = upload_video(video, title, description, auth)
             print(upload_response)
-            video_info["Youtube Video"].value = "https://youtu.be/" + upload_response["id"]
+            video_info[out_youtube_video_field].value = "https://youtu.be/" + upload_response["id"]
             video_id = upload_response["id"]
         except Exception as e:
             print("Failed to upload {}: {}".format(video, e))
             print("Stopping uploading")
             break
 
-        subtitles = video_info["Subtitles File"].value
+        subtitles = video_info[subtitles_file_field].value
         # Upload the subtitles
         if subtitles:
             try:
-                subtitles = os.path.join(video_root_path, video_info["Subtitles File"].value)
+                subtitles = os.path.join(video_root_path, video_info[subtitles_file_field].value)
                 subtitles_response = auth.youtube.captions().insert(
                     part="id,snippet",
                     body={
                         "snippet": {
                             "videoId": upload_response["id"],
                             "language": "en-us",
-                            "name": video_info["Subtitles File"].value
+                            "name": video_info[subtitles_file_field].value
                         }
                     },
                     media_body=MediaFileUpload(subtitles)
@@ -219,14 +229,14 @@ for r in range(2, video_table.table.max_row + 1):
             except Exception as e:
                 print("Failed to upload {}: {}".format(subtitles, e))
     else:
-        video_id = schedule.match_youtube_id(video_info["Youtube Video"].value)
+        video_id = schedule.match_youtube_id(video_info[out_youtube_video_field].value)
         if update_descriptions:
             update_response = update_video(video_id, title, description, auth)
             print(update_response)
 
     if video_id:
-        if video_info["Playlist Title"].value and not video_info["Youtube Playlist"].value:
-            playlist_title = schedule.make_youtube_title(video_info["Playlist Title"].value)
+        if video_info[playlist_field].value and not video_info[out_youtube_playlist_field].value:
+            playlist_title = schedule.make_youtube_title(video_info[playlist_field].value)
             if not playlist_title in playlists:
                 playlists[playlist_title] = []
             if not video_id in playlists[playlist_title]:
@@ -273,8 +283,8 @@ for pl, videos in playlists.items():
                     }
                 }).execute()
 
-        r = video_table.find("Youtube Video", "https://youtu.be/" + v)
-        video_table.entry(r[0], "Youtube Playlist").value = "https://www.youtube.com/playlist?list={}".format(current_playlists[pl]["id"])
+        r = video_table.find(out_youtube_video_field, "https://youtu.be/" + v)
+        video_table.entry(r[0], out_youtube_playlist_field).value = "https://www.youtube.com/playlist?list={}".format(current_playlists[pl]["id"])
         video_db.save(arguments["<video_list.xlsx>"])
 
 video_db.save(arguments["<video_list.xlsx>"])
