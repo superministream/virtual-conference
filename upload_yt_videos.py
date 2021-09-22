@@ -21,17 +21,21 @@ Usage:
 arguments = docopt(USAGE)
 
 sheet_name = "testday"
-title_field = "Title"
+title_field = "Time Slot Title"
 authors_field = "Authors"
 description_field = "Abstract"
 video_file_field = "Video File"
 subtitles_file_field = "Subtitles File"
+playlist_prefix_field = "Event"
 playlist_field = "Session"
 
 out_youtube_video_field = "Youtube Video"
 out_youtube_playlist_field = "Youtube Playlist"
 
-video_db = excel_db.open(arguments["<video_list.xlsx>"])
+infile = arguments["<video_list.xlsx>"]
+outfile = os.path.splitext(infile)[0] + "_uploaded.xlsx"
+
+video_db = excel_db.open(infile)
 video_table = video_db.get_table(sheet_name)
 video_root_path = arguments["<video_root_path>"]
 update_descriptions = not arguments["--no-update"]
@@ -237,7 +241,11 @@ for r in range(2, video_table.table.max_row + 1):
 
     if video_id:
         if video_info[playlist_field].value and not video_info[out_youtube_playlist_field].value:
-            playlist_title = schedule.make_youtube_title(video_info[playlist_field].value)
+            playlist_title = video_info[playlist_prefix_field].value + " - " + video_info[playlist_field].value
+            if playlist_title[0:3] == "VIS":
+                playlist_title = "VIS21" + playlist_title[3:]
+
+            playlist_title = schedule.make_youtube_title(playlist_title)
             if not playlist_title in playlists:
                 playlists[playlist_title] = []
             if not video_id in playlists[playlist_title]:
@@ -246,10 +254,10 @@ for r in range(2, video_table.table.max_row + 1):
                 print("Video already in playlist")
     else:
         print("Video {} was not uploaded".format(title))
-    video_db.save(arguments["<video_list.xlsx>"])
+    video_db.save(outfile)
     print("----")
 
-video_db.save(arguments["<video_list.xlsx>"])
+video_db.save(outfile)
 # Create new playlists we need and add videos to the playlists
 print(playlists)
 for pl, videos in playlists.items():
@@ -286,7 +294,7 @@ for pl, videos in playlists.items():
 
         r = video_table.find(out_youtube_video_field, "https://youtu.be/" + v)
         video_table.entry(r[0], out_youtube_playlist_field).value = "https://www.youtube.com/playlist?list={}".format(current_playlists[pl]["id"])
-        video_db.save(arguments["<video_list.xlsx>"])
+        video_db.save(outfile)
 
-video_db.save(arguments["<video_list.xlsx>"])
+video_db.save(outfile)
 
