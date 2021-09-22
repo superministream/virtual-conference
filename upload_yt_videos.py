@@ -20,11 +20,7 @@ Usage:
 
 arguments = docopt(USAGE)
 
-video_db = excel_db.open(arguments["<video_list.xlsx>"])
-video_table = video_db.get_table("Sheet1")
-video_root_path = arguments["<video_root_path>"]
-update_descriptions = not arguments["--no-update"]
-
+sheet_name = "testday"
 title_field = "Title"
 authors_field = "Authors"
 description_field = "Abstract"
@@ -34,6 +30,11 @@ playlist_field = "Session"
 
 out_youtube_video_field = "Youtube Video"
 out_youtube_playlist_field = "Youtube Playlist"
+
+video_db = excel_db.open(arguments["<video_list.xlsx>"])
+video_table = video_db.get_table(sheet_name)
+video_root_path = arguments["<video_root_path>"]
+update_descriptions = not arguments["--no-update"]
 
 RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
 
