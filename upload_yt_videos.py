@@ -192,8 +192,10 @@ for r in range(2, video_table.table.max_row + 1):
         continue
     title = schedule.make_youtube_title(video_info[title_field].value)
 
+    description = "Title: " + video_info[title_field].value
+
     authors = video_info[authors_field].value.replace("|", ", ")
-    description = "Authors: " + authors
+    description += "\nAuthors: " + authors
     if video_info[description_field].value:
         description += "\n" + video_info[description_field].value
 
