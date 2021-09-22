@@ -135,3 +135,4 @@ dmypy.json
 .DS_Store
 paper_list.json
 session_list.json
+firebase_data.json

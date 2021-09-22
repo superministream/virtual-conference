@@ -88,6 +88,7 @@ for d in conference_days:
             "organizers": organizers.split("|") if organizers else [],
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
+            # TODO: We won't have this here anymore I think
             "discord_category": discord_category,
             "discord_channel": discord_channel,
             "discord_channel_id": discord_channel_id,
