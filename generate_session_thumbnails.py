@@ -25,6 +25,7 @@ for d in conference_days:
     sessions = day.get_sessions(False)
     for k, v in sessions.items():
         session_id = v.timeslot_entry(0, "Session ID").value
+        print(session_id)
         img = v.render_thumbnail(thumbnail_params)
         with open(os.path.join(output_dir, session_id + ".png"), "wb") as f:
             f.write(img.getbuffer())
