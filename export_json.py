@@ -82,7 +82,7 @@ for d in conference_days:
         session_info = {
             "title": session_title,
             "session_id": session_id,
-            "track": v.timeslot_entry(0, "Computer").value,
+            "track": "room" + str(v.timeslot_entry(0, "Computer").value),
             "schedule_image": session_id + ".png",
             "chair": [],
             "organizers": organizers.split("|") if organizers else [],
