@@ -3,16 +3,33 @@ import shutil
 import os
 import json
 from datetime import timedelta
+import pymediainfo
 
 import core.schedule as schedule
 
-if len(sys.argv) < 2:
-    print("Usage: {} <data sheet.xlsx>".format(sys.argv[0]))
+if len(sys.argv) < 3:
+    print("Usage: {} <data sheet.xlsx> <video root dir>".format(sys.argv[0]))
     sys.exit(1)
 
+def get_video_length(video_file):
+    mi = pymediainfo.MediaInfo.parse(video_file)
+    general_track = [t for t in mi.tracks if t.track_type == "General"][0]
+    return general_track.to_data()["duration"] / 1000
+
+
 database = schedule.Database(sys.argv[1])
+video_root_dir = sys.argv[2]
 
 rooms = {}
+for c in database.computers.items():
+    room_id = c["ID"].value
+    rooms[f"room{room_id}"] = {
+        "slido": c["Slido"].value,
+        "discord": c["Discord Channel ID"].value,
+        "name": c["Name"].value,
+        "currentSession": ""
+    }
+
 all_sessions = {}
 #conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 conference_days = ["tuesday"]
@@ -50,7 +67,7 @@ for d in conference_days:
             },
             "name": session_title,
             "session_id": session_id,
-            "room": track_id,
+            "room": f"room{track_id}",
             "slido": track_info["Slido"].value,
             "discord": track_info["Discord Channel ID"].value,
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
@@ -79,7 +96,7 @@ for d in conference_days:
 
         livestream_youtubeid = None
         if v.timeslot_entry(0, "Youtube Broadcast").value:
-            schedule.match_youtube_id(v.timeslot_entry(0, "Youtube Broadcast").value)
+            livestream_youtubeid = schedule.match_youtube_id(v.timeslot_entry(0, "Youtube Broadcast").value)
 
 
         # And a live opening by the chair or presenters
@@ -108,7 +125,15 @@ for d in conference_days:
             if time_slot_type == "live":
                 time_slot_info["live"] = True,
 
+            video_length = 0
             if time_slot_type == "recorded":
+                talk_video = v.timeslot_entry(i, "Video File").value
+                if talk_video:
+                    video_length = get_video_length(os.path.join(video_root_dir, talk_video))
+                    time_slot_info["video_length"] = video_length
+                    talk_video_end = timeslot_time[0] + timedelta(seconds=video_length)
+                    time_slot_info["time_end"] = schedule.format_time_iso8601_utc(talk_video_end)
+
                 talk_video_url = v.timeslot_entry(i, "Youtube Video").value
                 if talk_video_url:
                     time_slot_info["youtubeId"] = schedule.match_youtube_id(talk_video_url)
@@ -126,12 +151,17 @@ for d in conference_days:
             # TODO: Some events may want to play all the videos through then do Q&A after?
             # We can handle that or they can work it out with the technician
             # The Q&A portion then is just used to introduce the next talk directly
-            session_info["stages"].append({
+            qa_stage = {
                 "live": True,
                 "title": f"{timeslot_title} - Q&A",
-                "state": "WATCHING",
+                "state": "QA",
                 "youtubeId": livestream_youtubeid
-            })
+            }
+            if video_length != 0:
+                qa_stage["time_start"] = time_slot_info["time_end"]
+                qa_stage["time_end"] = schedule.format_time_iso8601_utc(timeslot_time[1])
+
+            session_info["stages"].append(qa_stage)
 
         # The session concludes by returning to the bumper
         session_info["stages"].append({
@@ -143,4 +173,8 @@ for d in conference_days:
         all_sessions[session_id] = session_info
 
 with open("firebase_data.json", "w", encoding="utf8") as f:
-    json.dump(all_sessions, f, indent=4)
+    all_data = {
+        "rooms": rooms,
+        "sessions": all_sessions,
+    }
+    json.dump(all_data, f, indent=4)
