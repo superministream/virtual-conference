@@ -147,6 +147,48 @@ def send_html_email(subject, body, recipients, email, cc_recipients=None, attach
         })
     print(response)
 
+def schedule_zoom_meeting(auth, title, password, start, end, agenda, host, alternative_hosts=[]):
+    # Max Zoom meeting topic length is 200 characters
+    if len(title) > 200:
+        title = title[0:199]
+    # Max agenda length is 2000 characters
+    if len(agenda) > 2000:
+        agenda = agenda[0:1999]
+
+    meeting_info = {
+        "topic": title,
+        "type": 2,
+        "start_time": start.astimezone(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timezone": "UTC",
+        "duration": int((end - start).total_seconds() / 60.0),
+        "password": password,
+        "agenda": agenda,
+        "settings": {
+            "host_video": False,
+            "participant_video": False,
+            "join_before_host": True,
+            "mute_upon_entry": True,
+            "waiting_room": False,
+            "audio": "both",
+            "alternative_hosts": ",".join(alternative_hosts),
+            "global_dial_in_countries": [
+                # NOTE: Fill in dial in countries as appropriate for your conference
+                "DE",
+                "SE",
+                "JP",
+                "KR",
+                "GB",
+                "US",
+                "CA"
+            ]
+        }
+    }
+
+    zoom_info = requests.post("https://api.zoom.us/v2/users/{}/meetings".format(host),
+            json=meeting_info, headers=auth.zoom).json()
+    return zoom_info
+
+
 class Database:
     def __init__(self, workbook_name, youtube=False, email=False, use_pickled_credentials=False):
         self.workbook = excel_db.open(workbook_name)
@@ -158,7 +200,7 @@ class Database:
         self.computers = self.workbook.get_table("computers")
 
     def get_day(self, day):
-        return Day(self, self.workbook.get_table(day))
+        return Day(self, self.workbook.get_table(day), day)
 
     def save(self, output):
         self.workbook.save(output)
@@ -177,13 +219,26 @@ class Database:
                 if c["Youtube Stream Key"].value == s["cdn"]["ingestionInfo"]["streamName"]:
                     c["Youtube Stream Key ID"].value = s["id"]
 
+    def populate_zoom_host_ids(self):
+        r = requests.get("https://api.zoom.us/v2/users?status=active&page_size=30&page_number=1",
+                headers=self.auth.zoom).json()
+        # Find the host for each computer/track
+        for user in r["users"]:
+            c = self.get_computer(int(user["last_name"]))
+            if len(c) == 1:
+                c["Zoom Host ID"].value = str(user["id"])
+            else:
+                print(f"No computer or multiple found for Zoom host {user['first_name']}, {user['last_name']}")
+            
+
     def get_computer(self, computer_id):
         return [c for c in self.computers.items() if c["ID"].value == computer_id][0]
 
 class Day:
-    def __init__(self, database, sheet):
+    def __init__(self, database, sheet, sheet_name):
         self.database = database
         self.sheet = sheet
+        self.sheet_name = sheet_name
 
         # Get the month and day from the sheet
         match_day = re.compile("\w+ (\d+)/(\d+)")
@@ -324,6 +379,18 @@ class Session:
             print("Broadcast {} is in state {}, and cannot be (re-)made live".format(self.youtube_broadcast_id(), broadcast_status))
             return
 
+        # Attach YT broadcast to the Zoom meeting
+        livestream_info = {
+            "stream_url": "rtmp://a.rtmp.youtube.com/live2",
+            "stream_key": stream_key,
+            "page_url": self.timeslot_entry(0, "Youtube Broadcast").value
+        }
+        add_livestream = requests.patch("https://api.zoom.us/v2/meetings/{}/livestream".format(
+            self.get_zoom_meeting_id()), json=livestream_info, headers=self.auth.zoom)
+        if add_livestream.status_code != 204:
+            print(f"ERROR: Failed to set live stream for Zoom meeting {self.event_session_title()}")
+            sys.exit(1)
+
         # Attach the stream to the broadcast
         print("Attaching stream '{}' to '{}'".format(stream_key, self.youtube_broadcast_id()))
         self.auth.youtube.liveBroadcasts().bind(
@@ -418,99 +485,29 @@ class Session:
         requests.patch("https://api.zoom.us/v2/meetings/{}/livestream/status".format(self.get_zoom_meeting_id()),
             json=zoom_params, headers=self.auth.zoom)
 
-    # Create the virtual aspects of the session to be streamed by the specified computer
-    def create_virtual_session(self, computer, thumbnail_params):
-        for t in range(0, len(self.timeslots)):
-            self.timeslot_entry(t, "Computer").value = computer
+    # Create the virtual aspects of the session to be streamed by the computer in the sheet
+    # The tracks are now preassigned this year to match up with the conference tracks better
+    def create_virtual_session(self, thumbnail_params):
         if self.timeslot_entry(0, "Time Slot Type").value != "Zoom Only":
             self.schedule_youtube_broadcast(thumbnail_params)
-        self.schedule_zoom()
+        self.populate_zoom_info()
 
-    # Schedule the Zoom meeting for the session and populate the sheet
-    def schedule_zoom(self):
-        computer = self.timeslot_entry(0, "Computer").value
+    # Each track has a single day-long Zoom meeting that is shared by all sessions
+    # So here we just populate the session's time slots with the Computer's zoom info
+    def populate_zoom_info(self):
+        track = self.timeslot_entry(0, "Computer").value
 
-        # First get our user info (we'll just have 1 per-account I guess?)
-        headers = self.auth.zoom
-        r = requests.get("https://api.zoom.us/v2/users?status=active&page_size=30&page_number=1", headers=headers).json()
-        # Find the computer assigned to host the meeting and make them the main host, all
-        # others are alternative hosts. NOTE: Each computer's Zoom account is identified by
-        # having its last name be its computer ID letter
-        host = None
-        alternative_hosts = []
-        for user in r["users"]:
-            if user["last_name"] == computer:
-                host = user["id"]
-            else:
-                alternative_hosts.append(user["id"])
-        # For testing: if user doesn't exist just take the first one (i.e., on my account)
-        if not host:
-            print("WARNING: TESTING CODE in schedule_zoom: Picking first host after not finding track ID Zoom host")
-            host = r["users"][0]["id"]
-            alternative_hosts = []
-
-        session_time = self.session_time()
-        # Zoom meetings start 15min ahead of time to set up, and can run 10min over
-        zoom_start = session_time[0] - self.setup_time()
-        zoom_end = session_time[1] + timedelta(minutes=10)
-        meeting_topic = CONFERENCE_NAME + ": " + self.event_session_title()
-        # Max Zoom meeting topic length is 200 characters
-        if len(meeting_topic) > 200:
-            meeting_topic = meeting_topic[0:199]
-        # Max agenda length is 2000 characters
-        meeting_agenda = str(self)
-        if len(meeting_agenda) > 2000:
-            meeting_agenda = meeting_agenda[0:1999]
-
-        meeting_info = {
-            "topic": meeting_topic,
-            "type": 2,
-            "start_time": zoom_start.astimezone(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "timezone": "UTC",
-            "duration": int((zoom_end - zoom_start).total_seconds() / 60.0),
-            "password": generate_password(),
-            "agenda": meeting_agenda,
-            "settings": {
-                "host_video": False,
-                "participant_video": False,
-                "join_before_host": False,
-                "mute_upon_entry": True,
-                "waiting_room": True,
-                "audio": "both",
-                "alternative_hosts": ",".join(alternative_hosts),
-                "global_dial_in_countries": [
-                    # NOTE: Fill in dial in countries as appropriate for your conference
-                    "DE",
-                    "SE",
-                    "JP",
-                    "KR",
-                    "GB",
-                    "US",
-                    "CA"
-                ]
-            }
-        }
-
-        zoom_info = requests.post("https://api.zoom.us/v2/users/{}/meetings".format(host),
-                json=meeting_info, headers=headers).json()
-
-        # Set up the zoom meeting to live stream to our Youtube broadcast
-        livestream_info = {
-            "stream_url": "rtmp://a.rtmp.youtube.com/live2",
-            "stream_key": self.get_stream_key(),
-            "page_url": self.timeslot_entry(0, "Youtube Broadcast").value
-        }
-        add_livestream = requests.patch("https://api.zoom.us/v2/meetings/{}/livestream".format(zoom_info["id"]),
-                json=livestream_info, headers=headers)
-        if add_livestream.status_code != 204:
-            print(f"ERROR: Failed to set live stream for Zoom meeting {meeting_topic}")
-            sys.exit(1)
+        day_name = self.day.sheet_name
+        computer = self.day.database.get_computer(track)
+        zoom_url = computer[f"Zoom URL {day_name}"].value
+        zoom_meeting_id = computer[f"Zoom Meeting ID {day_name}"].value
+        zoom_password = computer[f"Zoom password {day_name}"].value
 
         # Fill in the Zoom info in the sheet
         for t in range(0, len(self.timeslots)):
-            self.timeslot_entry(t, "Zoom URL").value = zoom_info["join_url"]
-            self.timeslot_entry(t, "Zoom Meeting ID").value = str(zoom_info["id"])
-            self.timeslot_entry(t, "Zoom Password").value = meeting_info["password"]
+            self.timeslot_entry(t, "Zoom URL").value = zoom_url
+            self.timeslot_entry(t, "Zoom Meeting ID").value = zoom_meeting_id
+            self.timeslot_entry(t, "Zoom Password").value = zoom_password
 
     def get_zoom_meeting_id(self):
         return self.timeslot_entry(0, "Zoom Meeting ID").value
@@ -535,7 +532,7 @@ class Session:
         title = self.make_youtube_title()
         description = self.make_youtube_description()
         session_time = self.session_time()
-        enable_captions = "Live Captions" in self.special_notes()
+        enable_captions = "YTCaptions" in self.special_notes()
         broadcast_info = self.auth.youtube.liveBroadcasts().insert(
             part="id,snippet,contentDetails,status",
             body={

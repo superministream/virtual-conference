@@ -40,44 +40,57 @@ thumbnail_params = None
 database = schedule.Database(sys.argv[1], youtube=True, use_pickled_credentials=True)
 # Fill in the computer stream key IDs
 database.populate_stream_key_ids()
+database.populate_zoom_host_ids()
 
-day = database.get_day(sys.argv[2])
+day_name = sys.argv[2]
+day = database.get_day(day_name)
 sessions = day.get_sessions(False)
 
-computer_dict = {}
+computers = database.computers.items()
 
-# TODO: Now the tracks are set by the program schedule and more fixed. So instead
-# of assigning computers they're already assigned and we just need to validate
-# there aren't any conflicts
-for c in database.computers.items():
-    if not c["Youtube Stream Key ID"].value:
-        print("Failed to get stream key ID for computer {}, aborting!".format(c["ID"].value))
-        sys.exit(1)
-    # All computers are initially marked as available starting at midnight
-    avail_at = datetime(schedule.CONFERENCE_YEAR, day.month, day.day, hour=0, minute=1, tzinfo=schedule.conf_tz)
-    # We also include the ID as a tiebreaker for when all the computers have the same time,
-    # since the dicts are not comparable
-    computer_dict[c["ID"].value] = (avail_at, c["ID"].value)
+# Check that the Zoom meetings have been created for each computer for this day
+# and if not create them spanning the time we need for the conference +/- 30min
+for c in computers:
+    if not c[f"Zoom URL {day_name}"].value:
+        track = c["ID"].value
+        password = schedule.generate_password()
+        title = f"{schedule.CONFERENCE_NAME}: {day_name}  track {track}"
+
+        # Find the start time of the first session and end time of the last one in the track
+        track_start = None
+        track_end = None
+        for k, v in sessions.items():
+            if track != v.track():
+                continue
+            session_time = v.session_time()
+            if track_start == None or session_time[0] < track_start:
+                track_start = session_time[0]
+            if track_end == None or session_time[1] > track_end:
+                track_end = session_time[1]
+
+        track_start = track_start - timedelta(minutes=30)
+        track_end = track_end + timedelta(minutes=30)
+
+        host = c["Zoom Host ID"].value
+        alternative_hosts = [comp["Zoom Host ID"].value for comp in computers if comp["ID"].value != track]
+
+        zoom_info = schedule.schedule_zoom_meeting(database.auth, title, password, track_start, track_end,
+                "Conference", host, alternative_hosts=alternative_hosts)
+        c[f"Zoom URL {day_name}"].value = zoom_info["join_url"]
+        c[f"Zoom Meeting ID {day_name}"].value = str(zoom_info["id"])
+        c[f"Zoom password {day_name}"].value = password
+
+database.save(sys.argv[2] + "_scheduled.xlsx")
 
 for k, v in sessions.items():
     session_time = v.session_time()
     session_track = v.get_track()
-    avail_at, pc_id = computer_dict[session_track]
-    # We need some setup time ahead of the session's start time to do A/V check with the presenters
-    need_at = session_time[0] - v.setup_time()
-    if avail_at > need_at:
-        print(f"Session {v.event} - {v.name} is scheduled to start at {schedule.format_time(need_at)} on " + \
-              f"track {session_track} but the Zoom/Track isn't available until {schedule.format_time(avail_at)}")
-        sys.exit(1)
 
-    print("Session streams on computer {}".format(pc_id))
-    v.create_virtual_session(pc_id, thumbnail_params)
+    print(f"Session streams on computer/track {session_track}")
+    v.create_virtual_session(thumbnail_params)
     print(v)
     database.save(sys.argv[2] + "_scheduled.xlsx")
     print("------")
-    # The computer is available again 10 minutes after this session ends for buffer
-    avail_at = session_time[1] + timedelta(minutes=10)
-    computer_dict[session_track] = (avail_at, pc_id)
 
 if not setup_discord:
     print("Not creating Discord channels")
