@@ -68,6 +68,7 @@ for session in all_sessions:
             "Time Slot Title": slot["title"] if slot["title"] != "Organizers" else session["title"],
             "Authors": "|".join(slot["contributors"]),
             "Contributor(s)": "|".join(slot["contributors"]),
+            "Chair(s)": "|".join(session["chair"]),
             "Computer": track
         })
 
