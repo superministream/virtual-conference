@@ -186,10 +186,17 @@ for pl in yt_playlists:
     for i in items:
         current_playlists[title]["videos"].append(i["snippet"]["resourceId"]["videoId"])
 
+videos_uploaded = 0
 for r in range(2, video_table.table.max_row + 1):
     video_info = video_table.row(r)
     if not video_info[title_field].value:
         continue
+
+    if videos_uploaded >= 85:
+        print("Stopping after uploading 85 videos, approaching upload limit")
+        break
+    videos_uploaded += 1
+
     title = schedule.make_youtube_title(video_info[title_field].value)
 
     description = "Title: " + video_info[title_field].value
