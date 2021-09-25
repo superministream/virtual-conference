@@ -34,7 +34,8 @@ from google.auth.transport.requests import Request
 #    "auth0": {
 #        "client_id": "",
 #        "client_secret": "",
-#        "audience": ""
+#        "audience": "",
+#        "connection_id": ""
 # }
 class Authentication:
     def __init__(self, youtube=False, email=False, use_pickled_credentials=False,

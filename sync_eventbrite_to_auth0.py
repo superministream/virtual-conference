@@ -1,7 +1,7 @@
 import argparse
+import sys
 import time
 import os
-from datetime import datetime
 import json
 import os.path as path
 import bcrypt  # bcrypt
@@ -10,6 +10,10 @@ import secrets
 import time
 import http.client
 import requests
+
+from urllib.parse import urlsplit
+from datetime import datetime
+from email.mime.image import MIMEImage
 
 import core.auth as auth
 import core.schedule as schedule
@@ -39,26 +43,7 @@ def format_to_auth0(email, name, password, password_hash):
         "password_hash": password_hash.decode('utf-8'),
     }
 
-
-def get_auth0_access_token():
-    return ""
-    # TODO: URL, also from file
-    conn = http.client.HTTPSConnection("")
-    # TODO load from a file
-    payload = ""
-
-    headers = {'content-type': "application/json"}
-
-    conn.request("POST", "/oauth/token", payload, headers)
-
-    res = conn.getresponse()
-    data = res.read()
-
-    ob = json.loads(data.decode("utf-8"))
-    return ob["access_token"]
-
-def send_to_auth0(filename, access_token, connection_id):
-    return
+def send_to_auth0(session, filename, access_token, connection_id):
     payload = {
         "connection_id": connection_id,
         "external_id": "import_user",
@@ -73,14 +58,17 @@ def send_to_auth0(filename, access_token, connection_id):
         'authorization': f"Bearer {access_token}"
     }
 
-    # TODO: URL
-    response = requests.post("", data=payload, files=files,
+    domain = "https://" + urlsplit(session.auth0["audience"]).netloc + "/api/v2/jobs/users-imports"
+    response = requests.post(domain, data=payload, files=files,
                              headers=headers)
-
     print(response.content)
 
 def send_register_email(email, session, logo_attachment, name, password):
     discord_invite = ""
+    if not "SUPERMINISTREAM_DISCORD_INVITE" in os.environ:
+        print("WARNING: You must provide the discord_invite url in $SUPERMINISTREAM_DISCORD_INVITE")
+    else:
+        discord_invite = os.environ["SUPERMINISTREAM_DISCORD_INVITE"]
 
     # Send them an email with the account name and password
     email_html = f"""
@@ -209,10 +197,8 @@ def get_all(transmit_to_auth0, session, logo_attachment, max_new=-1):
             password = ""
             if email not in all_registered:
                 password = ''.join(secrets.choice(alphabet) for i in range(10)).encode("utf-8")
-                print(f"pw = {password}")
             else:
                 password = all_registered[email]["password"].encode("utf-8")
-                print(f"already registered? {password}")
 
             salt = bcrypt.gensalt(rounds=10)
             password_hash = bcrypt.hashpw(password, salt)
@@ -261,10 +247,11 @@ def get_all(transmit_to_auth0, session, logo_attachment, max_new=-1):
             json.dump(all_new, f)
         if transmit_to_auth0:
             print("Sending to Auth0")
-            token = get_auth0_access_token()
-            send_to_auth0(file_name, token, "")
+            token = session.get_auth0_token()
+            send_to_auth0(session, file_name, token, session.auth0["connection_id"])
             with open("registered.json", "w") as f:
                 json.dump(all_registered, f)
+    print(f"New registrations processed at {datetime.now()}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
@@ -275,8 +262,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print(args, args.auth0)
-    session = auth.Authentication(email=args.mail, eventbrite_api=True)
+    session = auth.Authentication(email=args.mail, eventbrite_api=True, auth0_api=True)
 
     logo_attachment = None
     if args.logo:
@@ -284,7 +270,7 @@ if __name__ == '__main__':
 
     while True:
         print("Checking for new registrations")
-        get_all(args.auth0, session, None, args.limit)
+        get_all(args.auth0, session, logo_attachment, args.limit)
         time.sleep(5 * 60)
 
 
