@@ -439,9 +439,9 @@ class Session:
             print(start_zoom_stream.text)
             sys.exit(1)
 
-        # Wait about 10s for the Zoom stream to connect
-        print("Sleeping 10s for Zoom live stream to begin")
-        time.sleep(10)
+        # Wait about 5s for the Zoom stream to connect, though it seems to be instant
+        print("Sleeping 5s for Zoom live stream to begin")
+        time.sleep(5)
 
         # Check the status of the live stream to make sure it's running before we make it live
         retries = 0
@@ -449,8 +449,8 @@ class Session:
         if stream_status != "active":
             print(f"Stream on computer {computer} (key {stream_key}) for" +
                 f"broadcast {self.youtube_broadcast_id()} is not active (currently {stream_status})." +
-                "will wait 10s longer for Zoom and retry")
-            time.sleep(10)
+                "will wait 5s longer for Zoom and retry")
+            time.sleep(5)
             retries = retries + 1
             if retries >= 2:
                 print(f"Retried {retries} times and zoom stream is still not live!?")
@@ -555,7 +555,7 @@ class Session:
         # Fill in the Zoom info in the sheet
         for t in range(0, len(self.timeslots)):
             self.timeslot_entry(t, "Discord Link").value = discord_link
-            self.timeslot_entry(t, "Discord Channel ID").value = discord_channel_id
+            self.timeslot_entry(t, "Discord Channel").value = discord_channel_id
             self.timeslot_entry(t, "Discord Invite Link").value = discord_invite_link
 
     def get_zoom_meeting_id(self):
