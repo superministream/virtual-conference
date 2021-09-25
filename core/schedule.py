@@ -32,10 +32,10 @@ conf_tz = timezone(-timedelta(hours=5))
 CONFERENCE_NAME = "VIS Testing 2021"
 # NOTE: This should be a URL to a wide aspect ratio conference logo image
 # See the image at the URL for an example
-CONFERENCE_LOGO_URL = "https://i.imgur.com/amRNJoR.png"
+CONFERENCE_LOGO_URL = "https://i.imgur.com/jxtqPae.png"
 # NOTE: This should be a URL to your a square conference icon image
 # See the image at the URL for an example
-CONFERENCE_ICON_URL = "https://i.imgur.com/amRNJoR.png"
+CONFERENCE_ICON_URL = "https://i.imgur.com/jxtqPae.png"
 CONFERENCE_YEAR = 2021
 
 match_timeslot = re.compile("(\d\d)(\d\d)-(\d\d)(\d\d)")
@@ -88,6 +88,23 @@ def match_discord_channel_id(url):
 
 def match_discord_guild_id(url):
     return match_discord_url(url)[0]
+
+def make_discord_category_name(name):
+    name = re.sub("\\-+", "-", re.sub("[^0-9A-Za-z\\- ]+", "", name.lower()))
+    # Max length is 100
+    if len(name) > 100:
+        return name[0:99].strip()
+    return name
+
+# Channel names have to be lower case without spaces and certain characters (&) so take
+# these out. They also can't have two -- in a sequence so also replace those
+def make_disord_channel_name(name):
+    name = re.sub("\\-+", "-", re.sub("[^0-9A-Za-z\\-]+", "", name.lower().replace(" ", "-")))
+    # Max length is 100
+    if len(name) > 100:
+        return name[0:99]
+    return name
+
 
 def base_discord_embed():
     return {
@@ -224,15 +241,21 @@ class Database:
                 headers=self.auth.zoom).json()
         # Find the host for each computer/track
         for user in r["users"]:
+            # Maria has an account on the IEEE VIS Zoom to manage billing
+            if not user["last_name"].isnumeric():
+                continue
             c = self.get_computer(int(user["last_name"]))
-            if len(c) == 1:
+            if c:
                 c["Zoom Host ID"].value = str(user["id"])
             else:
                 print(f"No computer or multiple found for Zoom host {user['first_name']}, {user['last_name']}")
             
 
     def get_computer(self, computer_id):
-        return [c for c in self.computers.items() if c["ID"].value == computer_id][0]
+        found = [c for c in self.computers.items() if c["ID"].value == computer_id]
+        if len(found) == 1:
+            return found[0]
+        return None
 
 class Day:
     def __init__(self, database, sheet, sheet_name):
@@ -376,7 +399,8 @@ class Session:
         # Broadcast could be in the ready state (configured and a stream key was bound),
         # or in the created state (configured but no stream key attached yet).
         if broadcast_status != "ready" and broadcast_status != "created":
-            print("Broadcast {} is in state {}, and cannot be (re-)made live".format(self.youtube_broadcast_id(), broadcast_status))
+            print("Broadcast {} is in state {}, and cannot be (re-)made live".format(self.youtube_broadcast_id(),
+                broadcast_status))
             return
 
         # Attach YT broadcast to the Zoom meeting
@@ -385,14 +409,16 @@ class Session:
             "stream_key": stream_key,
             "page_url": self.timeslot_entry(0, "Youtube Broadcast").value
         }
+        print(f"Attaching stream '{stream_key}' to '{self.get_zoom_meeting_id()}'")
         add_livestream = requests.patch("https://api.zoom.us/v2/meetings/{}/livestream".format(
             self.get_zoom_meeting_id()), json=livestream_info, headers=self.auth.zoom)
+        print(add_livestream)
         if add_livestream.status_code != 204:
             print(f"ERROR: Failed to set live stream for Zoom meeting {self.event_session_title()}")
             sys.exit(1)
 
         # Attach the stream to the broadcast
-        print("Attaching stream '{}' to '{}'".format(stream_key, self.youtube_broadcast_id()))
+        print(f"Attaching stream '{stream_key}' to '{self.youtube_broadcast_id()}'")
         self.auth.youtube.liveBroadcasts().bind(
             id=self.youtube_broadcast_id(),
             part="status",
@@ -403,8 +429,15 @@ class Session:
         zoom_params = {
             "action": "start"
         }
-        requests.patch("https://api.zoom.us/v2/meetings/{}/livestream/status".format(self.get_zoom_meeting_id()),
+        print(f"Starting zoom stream for {self.get_zoom_meeting_id()}")
+        start_zoom_stream = requests.patch("https://api.zoom.us/v2/meetings/{}/livestream/status".format(
+            self.get_zoom_meeting_id()),
             json=zoom_params, headers=self.auth.zoom)
+        print(start_zoom_stream)
+        if start_zoom_stream.status_code != 204:
+            print("Failed to start live stream") 
+            print(start_zoom_stream.text)
+            sys.exit(1)
 
         # Wait about 10s for the Zoom stream to connect
         print("Sleeping 10s for Zoom live stream to begin")
@@ -508,6 +541,22 @@ class Session:
             self.timeslot_entry(t, "Zoom URL").value = zoom_url
             self.timeslot_entry(t, "Zoom Meeting ID").value = zoom_meeting_id
             self.timeslot_entry(t, "Zoom Password").value = zoom_password
+
+    # Each track has a single discord channel shared by all sessions,
+    # so here we just populate the session's time slots with the Computer's info
+    def populate_discord_info(self):
+        track = self.timeslot_entry(0, "Computer").value
+
+        computer = self.day.database.get_computer(track)
+        discord_link = computer[f"Discord Link"].value
+        discord_channel_id = computer[f"Discord Channel ID"].value
+        discord_invite_link = computer[f"Discord Invite Link"].value
+
+        # Fill in the Zoom info in the sheet
+        for t in range(0, len(self.timeslots)):
+            self.timeslot_entry(t, "Discord Link").value = discord_link
+            self.timeslot_entry(t, "Discord Channel ID").value = discord_channel_id
+            self.timeslot_entry(t, "Discord Invite Link").value = discord_invite_link
 
     def get_zoom_meeting_id(self):
         return self.timeslot_entry(0, "Zoom Meeting ID").value
@@ -619,11 +668,7 @@ class Session:
                 self.title_card_schedule())
 
     def chat_category_name(self):
-        name = re.sub("\-+", "-", re.sub("[^0-9A-Za-z\- ]+", "", self.event.lower()))
-        # Max length is 100
-        if len(name) > 100:
-            return name[0:99].strip()
-        return name
+        return make_discord_category_name(self.event)
 
     # Channel names have to be lower case without spaces and certain characters (&) so take
     # these out. They also can't have two -- in a sequence so also replace those
@@ -634,11 +679,7 @@ class Session:
         if self.timeslot_entry(0, "Event Type").value == "Tutorial" \
             or self.timeslot_entry(0, "Event").value == self.timeslot_entry(0, "Session").value:
                 return "general"
-        name = re.sub("\-+", "-", re.sub("[^0-9A-Za-z\-]+", "", self.name.lower().replace(" ", "-")))
-        # Max length is 100
-        if len(name) > 100:
-            return name[0:99]
-        return name
+        return make_disord_channel_name(self.name)
 
     def contributor_info_html(self, zoom_meeting_info):
         session_time = self.session_time()
@@ -812,7 +853,8 @@ class Session:
         # TODO: Manage Discord Embed size limits: https://discordjs.guide/popular-topics/embeds.html#embed-limits
         # Will we actually hit these? Can finish test scheduling the week and if not, ignore it for now
         if self.timeslot_entry(0, "Youtube Broadcast").value:
-            embed["description"] = "Youtube URL: " + self.timeslot_entry(0, "Youtube Broadcast").value
+            track = self.timeslot_entry(0, "Computer").value
+            embed["description"] = "Room URL: " + "TODO WILL WE NEED URL, room = " + str(track)
 
         session_time = self.session_time()
         embed["fields"].append({
