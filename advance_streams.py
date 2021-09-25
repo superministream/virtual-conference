@@ -72,16 +72,12 @@ for s in start_sessions:
     s.start_streaming()
     print("-----")
 
-print("DEBUG: Not running Discord bot") 
-sys.exit(0)
-
 # Annoying but have to run bot to post the starting/ending messages
 client = discord.Client()
 @client.event
 async def on_ready():
     embed = schedule.base_discord_embed()
-    embed["title"] = "The Session has Ended"
-    embed["description"] = "Feel free to continue discussing in this channel."
+    embed["title"] = "The session has ended"
 
     for s in end_sessions:
         if not s.has_discord_channel():
@@ -90,9 +86,10 @@ async def on_ready():
         guild = [g for g in client.guilds if str(g.id) == guild_id][0]
         channel = [c for c in guild.text_channels if str(c.id) == channel_id]
         if len(channel) > 0:
-            session_info = await channel[0].send(embed=discord.Embed.from_dict(embed))
+            embed["description"] = f"Thanks for attending {s.event_session_title()}!"
+            await channel[0].send(embed=discord.Embed.from_dict(embed))
 
-    embed["title"] = "The Session is Starting"
+    embed["title"] = "The next session will begin soon"
     embed["description"] = ""
     for s in start_sessions:
         if not s.has_discord_channel():
@@ -101,7 +98,8 @@ async def on_ready():
         guild = [g for g in client.guilds if str(g.id) == guild_id][0]
         channel = [c for c in guild.text_channels if str(c.id) == channel_id]
         if len(channel) > 0:
-            session_info = await channel[0].send(embed=discord.Embed.from_dict(embed))
+            await channel[0].send(embed=discord.Embed.from_dict(embed))
+            await channel[0].send(embed=discord.Embed.from_dict(s.discord_embed_dict()))
 
     print("Start/End messages sent, hit Ctrl-C to kill the bot")
 
