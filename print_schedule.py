@@ -19,9 +19,9 @@ database = schedule.Database(sys.argv[1], None)
 day = database.get_day(sys.argv[2])
 sessions = day.get_sessions(False)
 
-# TODO: Now the tracks are set by the program schedule and more fixed. So instead
+# Now the tracks are set by the program schedule and more fixed. So instead
 # of assigning computers they're already assigned and we just need to validate
-# there aren't any conflicts
+# there aren't any conflicts caused by some typo or mistake in the sheet
 computer_dict = {}
 for c in database.computers.items():
     # All computers are initially marked as available starting at midnight
