@@ -14,7 +14,7 @@ import core.excel_db as excel_db
 # encoding errors. The script will also automatically check each video meets
 # certain criteria (resolution, encoding, length).
 
-match_presentation = re.compile(".*_[pP]resentation.*")
+match_presentation = re.compile("[^\\.].*_[pP]resentation.*")
 #match_presentation = re.compile(".*\.(mp4|mov)$")
 
 USAGE ="""
@@ -108,7 +108,13 @@ warnings_table.set_index(["video", "container", "resolution", "video_codec", "au
 unassigned_videos = []
 video_root_path = os.path.normpath(sys.argv[2])
 for path, dirs, files in os.walk(video_root_path):
+    if "sv_assignments" in path:
+        print(f"skipping {path}")
+        continue
     for f in files:
+        ext = os.path.splitext(f)[1]
+        if ext == ".srt" or ext == ".sbv":
+            continue
         m = match_presentation.match(f)
         if m:
             filename = os.path.join(path, f)
@@ -120,7 +126,7 @@ for path, dirs, files in os.walk(video_root_path):
                 mi = pymediainfo.MediaInfo.parse(filename)
                 video_track = len([t for t in mi.tracks if t.track_type == "Video"]) != 0
                 if not video_track:
-                    #print("Skipping non-video {}".format(filename))
+                    print(f"WARNING {filename} matched presentation but didn't have video track! Is it corrupt?")
                     continue
 
                 video = Video(filename, mi)
