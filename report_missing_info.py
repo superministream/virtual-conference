@@ -32,7 +32,8 @@ for r in range(2, slug_sheet.table.max_row + 1):
     }
 
 missing_videos_index = ["Event", "Session", "Time Slot Title",
-        "Video File", "Full Path", "Video Missing", "Subtitles Missing"]
+        "Video File", "Full Path", "Video Missing", "Subtitles Missing",
+        "YT Video Missing", "YT Playlist Missing"]
 missing_info_index = ["Time Slot", "Event", "Session", "Time Slot Title", "Items Missing"]
 
 missing_items_db = excel_db.ExcelDb()
@@ -52,7 +53,7 @@ for day in conference_days:
 
         row_info = sheet.row(r)
 
-        video = row_info["Video File Name"].value
+        video = row_info["Video File"].value
         if video:
             event = row_info["Event"].value
             session = row_info["Session"].value
@@ -62,6 +63,8 @@ for day in conference_days:
             sbv_path = os.path.join(video_root, os.path.splitext(video)[0] + ".sbv")
             video_missing = not os.path.isfile(video_path)
             subtitles_missing = not os.path.isfile(srt_path) and not os.path.isfile(sbv_path)
+            yt_video_uploaded = row_info["Youtube Video"].value != None
+            yt_playlist_set = row_info["Youtube Playlist"].value != None
 
             if video_missing or subtitles_missing:
                 if video_missing:
@@ -72,10 +75,12 @@ for day in conference_days:
                     "Event": event,
                     "Session": session,
                     "Time Slot Title": title,
-                    "Video File Name": video,
+                    "Video File": video,
                     "Full Path": video_path,
                     "Video Missing": "YES" if video_missing else "",
-                    "Subtitles Missing": "YES" if subtitles_missing else ""
+                    "Subtitles Missing": "YES" if subtitles_missing else "",
+                    "YT Video Missing": "YES" if not yt_video_uploaded else "",
+                    "YT Playlist Missing": "YES" if not yt_playlist_set else "",
                 })
 
         optional_image_assets = ["Session Logo", "Speaker Photo", "Custom Title Image"] 
@@ -96,7 +101,7 @@ for day in conference_days:
         # Check if any information is missing in this row and record it
         missing_info = []
         for k, v in row_info.items():
-            if v.value and "MISSING" in v.value:
+            if v.value and type(v.value) == str and "MISSING" in v.value:
                 missing_info.append(k)
         if len(missing_info) > 0:
             total_info_missing += 1

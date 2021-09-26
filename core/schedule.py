@@ -521,7 +521,8 @@ class Session:
     # Create the virtual aspects of the session to be streamed by the computer in the sheet
     # The tracks are now preassigned this year to match up with the conference tracks better
     def create_virtual_session(self, thumbnail_params):
-        if self.timeslot_entry(0, "Time Slot Type").value != "Zoom Only":
+        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
+        if timeslot_type != "Zoom Only" and timeslot_type != "No YT No Zoom":
             self.schedule_youtube_broadcast(thumbnail_params)
         self.populate_zoom_info()
 
