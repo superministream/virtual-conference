@@ -20,7 +20,7 @@ Usage:
 
 arguments = docopt(USAGE)
 
-sheet_name = "testday"
+sheet_name = "tuesday"
 title_field = "Time Slot Title"
 authors_field = "Authors"
 description_field = "Abstract"
@@ -71,7 +71,7 @@ def upload_video(video, title, description, auth):
     retries = 0
     while not response:
         try:
-            print(f"Uploading\ntitle = {title}\nauthors = {authors}\nvideo = {video}")
+            print(f"Uploading Video:\ntitle = {title}\nauthors = {authors}\nvideo = {video}")
             status, response = upload_request.next_chunk()
             if response:
                 if "id" in response:
@@ -115,28 +115,34 @@ def update_video(video_id, title, description, auth):
 
 def get_all_playlists(auth):
     all_playlists = []
+    page_token = None
     while True:
         playlists = auth.youtube.playlists().list(
             part="snippet,contentDetails",
             maxResults=50,
-            mine=True
+            mine=True,
+            pageToken=page_token
         ).execute()
         all_playlists += playlists["items"]
         if "nextPageToken" not in playlists:
             break
+        page_token = playlists["nextPageToken"]
     return all_playlists
 
 def get_playlist_items(auth, playlist_id):
     all_items = []
+    page_token = None
     while True:
         items = auth.youtube.playlistItems().list(
             part="id,snippet,status",
             maxResults=50,
-            playlistId=playlist_id
+            playlistId=playlist_id,
+            pageToken=page_token
         ).execute()
         all_items += items["items"]
         if "nextPageToken" not in items:
             break
+        page_token = items["nextPageToken"]
     return all_items
 
 if not out_youtube_video_field in video_table.index or not out_youtube_playlist_field in video_table.index:
@@ -155,7 +161,7 @@ for r in range(2, video_table.table.max_row + 1):
     video_info = video_table.row(r)
     # If there's no video, or it was already uploaded, skip verifying the file
     # exists because we don't need it
-    if not video_info[title_field].value or video_info[out_youtube_video_field].value:
+    if not video_info[video_file_field].value or video_info[out_youtube_video_field].value:
         continue
     video = os.path.join(video_root_path, video_info[video_file_field].value)
     if not os.path.isfile(video):
@@ -169,11 +175,13 @@ for r in range(2, video_table.table.max_row + 1):
             print("Subtitles {} were not found".format(subtitles))
 
 if not all_files_found:
-    print("Some files were not found, please correct the sheet and re-run")
-    sys.exit(1)
+    go = input("Some files were not found, would you like to proceed with uploading those that were found? (y/n): ")
+    if go == "n":
+        sys.exit(0)
 
 auth = conf_auth.Authentication(youtube=True, use_pickled_credentials=True)
 playlists = {}
+print("Getting playlists")
 yt_playlists = get_all_playlists(auth)
 current_playlists = {}
 for pl in yt_playlists:
@@ -186,10 +194,11 @@ for pl in yt_playlists:
     for i in items:
         current_playlists[title]["videos"].append(i["snippet"]["resourceId"]["videoId"])
 
+print("Starting upload")
 videos_uploaded = 0
 for r in range(2, video_table.table.max_row + 1):
     video_info = video_table.row(r)
-    if not video_info[title_field].value:
+    if not video_info[video_file_field].value:
         continue
 
     if videos_uploaded >= 85:
@@ -213,6 +222,11 @@ for r in range(2, video_table.table.max_row + 1):
     video_id = None
     if not video_info[out_youtube_video_field].value:
         video = os.path.join(video_root_path, video_info[video_file_field].value)
+        if not os.path.isfile(video):
+            print(f"Skipping uploading missing file {video}")
+            print("----")
+            continue
+
         try:
             upload_response = upload_video(video, title, description, auth)
             print(upload_response)
