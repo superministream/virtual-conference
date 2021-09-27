@@ -20,7 +20,7 @@ Usage:
 
 arguments = docopt(USAGE)
 
-sheet_name = "tuesday"
+sheet_name = "wednesday"
 title_field = "Time Slot Title"
 authors_field = "Authors"
 description_field = "Abstract"
@@ -156,6 +156,7 @@ if not out_youtube_video_field in video_table.index or not out_youtube_playlist_
     video_table.set_index(index)
 
 # Validate the input sheet
+num_videos = 0
 all_files_found = True
 for r in range(2, video_table.table.max_row + 1):
     video_info = video_table.row(r)
@@ -167,6 +168,8 @@ for r in range(2, video_table.table.max_row + 1):
     if not os.path.isfile(video):
         all_files_found = False
         print("Video {} was not found".format(video))
+    else:
+        num_videos += 1
     subtitles = video_info[subtitles_file_field].value
     if subtitles:
         subtitles = os.path.join(video_root_path, video_info[subtitles_file_field].value)
@@ -178,6 +181,8 @@ if not all_files_found:
     go = input("Some files were not found, would you like to proceed with uploading those that were found? (y/n): ")
     if go == "n":
         sys.exit(0)
+
+print(f"Will upload {num_videos} videos")
 
 auth = conf_auth.Authentication(youtube=True, use_pickled_credentials=True)
 playlists = {}
