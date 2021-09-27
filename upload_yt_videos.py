@@ -157,6 +157,7 @@ if not out_youtube_video_field in video_table.index or not out_youtube_playlist_
 
 # Validate the input sheet
 num_videos = 0
+total_bytes = 0
 all_files_found = True
 for r in range(2, video_table.table.max_row + 1):
     video_info = video_table.row(r)
@@ -169,6 +170,7 @@ for r in range(2, video_table.table.max_row + 1):
         all_files_found = False
         print("Video {} was not found".format(video))
     else:
+        total_bytes += os.path.getsize(video)
         num_videos += 1
     subtitles = video_info[subtitles_file_field].value
     if subtitles:
@@ -177,12 +179,13 @@ for r in range(2, video_table.table.max_row + 1):
             all_files_found = False
             print("Subtitles {} were not found".format(subtitles))
 
-if not all_files_found:
-    go = input("Some files were not found, would you like to proceed with uploading those that were found? (y/n): ")
-    if go == "n":
-        sys.exit(0)
-
 print(f"Will upload {num_videos} videos")
+print(f"Total data upload size: {total_bytes * 1e-6}MB")
+if not all_files_found:
+    print(f"WARNING: Some files were not found.")
+go = input("Proceed with upload? (y/n): ")
+if go == "n":
+    sys.exit(0)
 
 auth = conf_auth.Authentication(youtube=True, use_pickled_credentials=True)
 playlists = {}
