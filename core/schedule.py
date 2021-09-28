@@ -1,4 +1,5 @@
 import re
+import io
 import os
 import sys
 import time
@@ -18,6 +19,7 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from datetime import timezone, datetime, timedelta
 from googleapiclient.http import MediaIoBaseUpload
+from PIL import Image
 
 import core.excel_db as excel_db
 import core.auth as conf_auth
@@ -661,12 +663,20 @@ class Session:
         ).execute()
 
     def render_thumbnail(self, thumbnail_params):
-        return thumbnail.render_thumbnail(thumbnail_params["background"],
-                thumbnail_params["bold_font"],
-                thumbnail_params["regular_font"],
-                self.title_card_title(),
-                self.title_card_chair(),
-                self.title_card_schedule())
+        # Some sessions give us a custom image they want to use
+        if self.timeslot_entry(0, "Custom Title Image").value:
+            custom_img_path = os.path.join(thumbnail_params["asset_root_dir"], self.timeslot_entry(0, "Custom Title Image").value)
+            custom_img = Image.open(custom_img_path)
+            img_bytes = io.BytesIO()
+            custom_img.save(img_bytes, format="png")
+            return img_bytes
+        else:
+            return thumbnail.render_thumbnail(thumbnail_params["background"],
+                    thumbnail_params["bold_font"],
+                    thumbnail_params["regular_font"],
+                    self.title_card_title(),
+                    self.title_card_chair(),
+                    self.title_card_schedule())
 
     def chat_category_name(self):
         return make_discord_category_name(self.event)

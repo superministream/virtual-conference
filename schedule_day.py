@@ -12,16 +12,16 @@ import core.schedule as schedule
 # during the event.
 setup_discord = not "--no-discord" in sys.argv
 
-if len(sys.argv) < 5:
-    print("Usage: {} <data sheet.xlsx> <day> <thumbnail file> <font root>".format(sys.argv[0]))
+if len(sys.argv) < 6:
+    print("Usage: {} <data sheet.xlsx> <day> <thumbnail file> <font root> <assets root>".format(sys.argv[0]))
     sys.exit(1)
 
 discord_guild_id = None
-if setup_discord and len(sys.argv) < 6:
-    print("Usage: {} <data sheet.xlsx> <day> <thumbnail file> <font root> <discord guild ID>".format(sys.argv[0]))
+if setup_discord and len(sys.argv) < 7:
+    print("Usage: {} <data sheet.xlsx> <day> <thumbnail file> <font root> <assets root> <discord guild ID>".format(sys.argv[0]))
 
 if setup_discord:
-    discord_guild_id = sys.argv[5]
+    discord_guild_id = sys.argv[6]
 
 # Off for testing
 thumbnail_params = {
@@ -29,7 +29,8 @@ thumbnail_params = {
     # NOTE: You'll want to change these font file names with the ones you're using
     # in your streaming software.
     "bold_font": os.path.join(sys.argv[4], "title-font.ttf"),
-    "regular_font": os.path.join(sys.argv[4], "body-font.ttf")
+    "regular_font": os.path.join(sys.argv[4], "body-font.ttf"),
+    "asset_root_dir": sys.argv[5]
 }
 
 database = schedule.Database(sys.argv[1], youtube=True, use_pickled_credentials=True)
