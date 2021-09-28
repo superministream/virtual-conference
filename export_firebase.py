@@ -91,14 +91,6 @@ for d in conference_days:
         if bumper_id:
             bumper_id = schedule.match_youtube_id(bumper_id)
 
-        # This is followed by a bumper video
-        # TODO: I thought the order was bumper then preview?
-        session_info["stages"].append({
-            "youtubeId": bumper_id,
-            "state": "SOCIALIZING",
-            "title": f"The session '{session_title}' will begin soon"
-        })
-
         livestream_youtubeid = None
         if v.timeslot_entry(0, "Youtube Broadcast").value:
             livestream_youtubeid = schedule.match_youtube_id(v.timeslot_entry(0, "Youtube Broadcast").value)
