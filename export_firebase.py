@@ -74,7 +74,7 @@ for d in conference_days:
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
             "stages": [],
-            "special_notes": list(v.special_notes())
+            "special_notes": " ".join(v.special_notes())
         }
 
         # Each session begins with the image preview of the session info
