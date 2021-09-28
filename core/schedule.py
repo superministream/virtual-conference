@@ -767,10 +767,6 @@ class Session:
                     {zoom_call_info}
                 </ul>
             </ul>
-            <h2>Youtube Information</h2>
-            <ul>
-                <li>Youtube URL: <a href="{youtube_url}">{youtube_url}</a></li>
-            </ul>
             <h2>Discord Chat Information</h2>
             You can download the Discord app <a href="https://discord.com/">here</a>, or use it in your browser.
             <ul>
@@ -788,7 +784,6 @@ class Session:
                     zoom_password=self.timeslot_entry(0, "Zoom Password").value,
                     zoom_passcode=zoom_meeting_info["pstn_password"],
                     zoom_call_info=zoom_call_info,
-                    youtube_url=self.timeslot_entry(0, "Youtube Broadcast").value,
                     discord_invite=self.timeslot_entry(0, "Discord Invite Link").value,
                     discord_url=self.timeslot_entry(0, "Discord Link").value)
 
@@ -975,8 +970,6 @@ class Session:
 
         text += "\nSession start: " + format_time(session_time[0]) + \
                 "\nSession end: " + format_time(session_time[1])
-        if self.timeslot_entry(0, "Youtube Broadcast").value:
-            text += "\nYoutube URL: " + self.timeslot_entry(0, "Youtube Broadcast").value
 
         if self.timeslot_entry(0, "Discord Link").value:
             text += "\nDiscord Link: " + self.timeslot_entry(0, "Discord Link").value
