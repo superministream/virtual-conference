@@ -23,8 +23,10 @@ video_root_dir = sys.argv[2]
 rooms = {}
 for c in database.computers.items():
     room_id = c["ID"].value
-    rooms[f"room{room_id}"] = {
-        "slido": c["Slido"].value,
+    room_str = f"room{room_id}"
+    rooms[room_str] = {
+        "slido": c["Slido Event"].value,
+        "slido_room": c["Slido Room"].value,
         "discord": c["Discord Channel ID"].value,
         "name": c["Name"].value,
         "currentSession": ""
@@ -32,7 +34,7 @@ for c in database.computers.items():
 
 all_sessions = {}
 #conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
-conference_days = ["tuesday"]
+conference_days = ["demoday"]
 for d in conference_days:
     print(d)
     day = database.get_day(d)
@@ -60,6 +62,7 @@ for d in conference_days:
         track_info = database.get_computer(track_id)
         discord_channel_id = int(track_info["Discord Channel ID"].value)
 
+        room_str = f"room{room_id}"
         session_info = {
             "currentStatus": {
                 "videoIndex": 1,
@@ -67,8 +70,9 @@ for d in conference_days:
             },
             "name": session_title,
             "session_id": session_id,
-            "room": f"room{track_id}",
-            "slido": track_info["Slido"].value,
+            "room": room_str,
+            "slido": track_info["Slido Event"].value,
+            "slido_room": track_info["Slido Room"].value,
             "discord": track_info["Discord Channel ID"].value,
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
