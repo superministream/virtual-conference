@@ -736,7 +736,7 @@ class Session:
                 the session starts to allow the contributors, chair, and technician to set up
                 and test everyone's audio and video set up. Make sure you are in a well-lit
                 and quiet room, and have your laptop plugged in.
-                <b>Please make sure your Zoom is updated to version 5.3 or later.</b>
+                <b>Please make sure your Zoom is updated to version 5.8 or later.</b>
                 Follow <a href="https://support.zoom.us/hc/en-us/articles/201362233-Upgrade-update-to-the-latest-version">
                 this guide</a> to update Zoom to the latest version.
                 The Zoom meeting information is included below in this email.
