@@ -76,7 +76,8 @@ for d in conference_days:
             "discord": track_info["Discord Channel ID"].value,
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
-            "stages": []
+            "stages": [],
+            "special_notes": list(v.special_notes())
         }
 
         # Each session begins with the image preview of the session info
