@@ -159,7 +159,6 @@ for d in conference_days:
 
         # The session concludes by returning to the bumper
         session_info["stages"].append({
-            "youtubeId": bumper_id,
             "state": "SOCIALIZING",
             "title": "Thanks for attending!"
         })
