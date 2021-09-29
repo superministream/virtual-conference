@@ -62,10 +62,10 @@ for d in conference_days:
         track_info = database.get_computer(track_id)
         discord_channel_id = int(track_info["Discord Channel ID"].value)
 
-        room_str = f"room{room_id}"
+        room_str = f"room{track_id}"
         session_info = {
             "currentStatus": {
-                "videoIndex": 1,
+                "videoIndex": 0,
                 "videoStartTimestamp": 0
             },
             "name": session_title,
