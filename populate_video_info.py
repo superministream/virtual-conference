@@ -32,6 +32,9 @@ paper_assets = {}
 # Collect all the videos, subtitle, image and image caption info for this event indexed by UID
 print(f"Collecting all assets under {video_root_path}")
 for path, dirs, files in os.walk(video_root_path):
+    if "sv_assignments" in path:
+        print(f"skipping {path}")
+        continue
     for f in files:
         if f[0] == ".":
             continue
