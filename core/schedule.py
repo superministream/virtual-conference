@@ -619,13 +619,14 @@ class Session:
         ).execute()
 
         # Due to a bug in the Youtube Broadcast API we have to set the made for
-        # kids flag through the videos API separately
+        # kids and embeddable flags through the videos API separately
         update_resp = self.auth.youtube.videos().update(
             part="id,contentDetails,status",
             body={
                 "id": broadcast_info["id"],
                 "status": {
                     "selfDeclaredMadeForKids": False,
+                    "embeddable": True
                 }
             }
         ).execute()
