@@ -165,9 +165,8 @@ for d in conference_days:
 
         all_sessions[session_id] = session_info
 
-with open("firebase_data.json", "w", encoding="utf8") as f:
-    all_data = {
-        "rooms": rooms,
-        "sessions": all_sessions,
-    }
-    json.dump(all_data, f, indent=4)
+with open("firebase_data_sessions.json", "w", encoding="utf8") as f:
+    json.dump(all_sessions, f, indent=4)
+
+with open("firebase_data_rooms.json", "w", encoding="utf8") as f:
+    json.dump(rooms, f, indent=4)
