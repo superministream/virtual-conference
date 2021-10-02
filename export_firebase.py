@@ -58,11 +58,10 @@ for d in conference_days:
         
         ff_playlist = v.timeslot_entry(0, "FF Playlist").value
 
-        track_id = v.timeslot_entry(0, "Computer").value
-        track_info = database.get_computer(track_id)
-        discord_channel_id = int(track_info["Discord Channel ID"].value)
+        room_id = v.timeslot_entry(0, "Computer").value
+        room_info = database.get_computer(room_id)
 
-        room_str = f"room{track_id}"
+        room_str = f"room{room_id}"
         session_info = {
             "currentStatus": {
                 "videoIndex": 0,
@@ -83,10 +82,6 @@ for d in conference_days:
             "state": "PREVIEW",
             "title": "The session will begin soon"
         })
-
-        bumper_id = track_info["Bumper Video"].value
-        if bumper_id:
-            bumper_id = schedule.match_youtube_id(bumper_id)
 
         livestream_youtubeid = None
         if v.timeslot_entry(0, "Youtube Broadcast").value:

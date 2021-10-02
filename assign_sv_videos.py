@@ -15,7 +15,7 @@ import core.excel_db as excel_db
 # certain criteria (resolution, encoding, length).
 
 match_presentation = re.compile("[^\\.].*_[pP]resentation.*")
-#match_presentation = re.compile(".*\.(mp4|mov)$")
+#match_presentation = re.compile(".*\\.(mp4|mov|mkv)$")
 
 USAGE ="""
 Usage: assign_sv_videos.py already_assigned_list.json video_root_dir warnings_output.xlsx suffix [max talk length (minutes)]

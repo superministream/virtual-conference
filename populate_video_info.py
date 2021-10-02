@@ -87,7 +87,7 @@ for path, dirs, files in os.walk(video_root_path):
 
 
 # Iterate through the schedule and find each paper and populate its video, subtitles, image and caption info
-days = ["monday", "tuesday", "wednesday", "thursday", "friday"]
+days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for d in days:
     day_info = schedule_db.get_day(d)
     sessions = day_info.get_sessions(False)

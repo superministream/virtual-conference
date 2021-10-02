@@ -27,7 +27,7 @@ schedule_db = schedule.Database(sys.argv[4])
 
 # Go through the papers in paper info and make the stripped title slug to look up,
 # then go find it in the schedule
-days = ["monday", "tuesday", "wednesday", "thursday", "friday"]
+days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for paper in paper_info.items():
     found_paper = False
     # We're done when we run out of paper titles
