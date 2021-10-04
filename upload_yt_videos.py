@@ -20,7 +20,7 @@ Usage:
 
 arguments = docopt(USAGE)
 
-sheet_name = "wednesday"
+sheet_name = "thursday"
 title_field = "Time Slot Title"
 authors_field = "Authors"
 description_field = "Abstract"
@@ -156,7 +156,7 @@ if not out_youtube_video_field in video_table.index or not out_youtube_playlist_
     video_table.set_index(index)
 
 # Validate the input sheet
-num_videos = 0
+to_upload = []
 total_bytes = 0
 all_files_found = True
 for r in range(2, video_table.table.max_row + 1):
@@ -171,7 +171,7 @@ for r in range(2, video_table.table.max_row + 1):
         print("Video {} was not found".format(video))
     else:
         total_bytes += os.path.getsize(video)
-        num_videos += 1
+        to_upload.append(video)
     subtitles = video_info[subtitles_file_field].value
     if subtitles:
         subtitles = os.path.join(video_root_path, video_info[subtitles_file_field].value)
@@ -179,8 +179,10 @@ for r in range(2, video_table.table.max_row + 1):
             all_files_found = False
             print("Subtitles {} were not found".format(subtitles))
 
-print(f"Will upload {num_videos} videos")
+print(f"Will upload {len(to_upload)} videos")
 print(f"Total data upload size: {total_bytes * 1e-6}MB")
+for v in to_upload:
+    print(v)
 if not all_files_found:
     print(f"WARNING: Some files were not found.")
 go = input("Proceed with upload? (y/n): ")
@@ -212,6 +214,8 @@ for r in range(2, video_table.table.max_row + 1):
     if videos_uploaded >= 85:
         print("Stopping after uploading 85 videos, approaching upload limit")
         break
+
+    print(f"{video_info[video_file_field].value}")
     videos_uploaded += 1
 
     title = schedule.make_youtube_title(video_info[title_field].value)
