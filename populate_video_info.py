@@ -26,7 +26,7 @@ match_image = re.compile(".*_[iI]mage.*")
 # e.g. <prefix>-ID vs. <prefix>_ID , so just take the first number we get
 # as the paper ID
 match_id = re.compile(".*[^0-9]([0-9]+)[^0-9].*\\..*")
-match_prefix = re.compile("([a-z\\-]+)-\\d+")
+match_prefix = re.compile("([a-z4\\-]+)-\\d+")
 
 paper_assets = {}
 # Collect all the videos, subtitle, image and image caption info for this event indexed by UID
@@ -100,7 +100,12 @@ for d in days:
 
             title = v.timeslot_entry(i, 'Time Slot Title').value
             if not uid in paper_assets:
-                prefix = match_prefix.match(uid).group(1)
+                m = match_prefix.match(uid)
+                if not m:
+                    print(f"UID {uid} doesn't match the UID pattern!")
+                    sys.exit(1)
+
+                prefix = m.group(1)
                 if prefix == sys.argv[3]:
                     print(f"No presentation video was found for {title}, UID: {uid}")
                 continue
