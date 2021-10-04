@@ -128,11 +128,16 @@ for d in conference_days:
                     time_slot_info["youtubeId"] = schedule.match_youtube_id(talk_video_url)
                 else:
                     print(f"No YouTube video found for talk {timeslot_title} which should have a video")
-            else:
+            elif time_slot_type == "live":
                 if livestream_youtubeid:
                     time_slot_info["youtubeId"] = livestream_youtubeid
                 else:
                     print(f"No YouTube video found for live stream {timeslot_title} which should have one")
+            elif time_slot_type == "gathertown":
+                time_slot_info["state"] = "SOCIALIZING"
+            else:
+                print(f"Error! Unrecognized time slot type {time_slot_type}")
+                sys.exit(1)
 
             session_info["stages"].append(time_slot_info)
 
