@@ -53,15 +53,21 @@ for day in conference_days:
 
         row_info = sheet.row(r)
 
+        timeslot_type = row_info["Time Slot Type"].value
+
         video = row_info["Video File"].value
-        if video:
+        if timeslot_type == "recorded" or video:
             event = row_info["Event"].value
             session = row_info["Session"].value
             title = row_info["Time Slot Title"].value
-            video_path = os.path.join(video_root, video)
-            srt_path = os.path.join(video_root, os.path.splitext(video)[0] + ".srt")
-            sbv_path = os.path.join(video_root, os.path.splitext(video)[0] + ".sbv")
-            video_missing = not os.path.isfile(video_path)
+            # Default if we don't have the video file but this is a recorded talk, it's missing
+            video_missing = True
+            video_path = None
+            if video:
+                video_path = os.path.join(video_root, video)
+                srt_path = os.path.join(video_root, os.path.splitext(video)[0] + ".srt")
+                sbv_path = os.path.join(video_root, os.path.splitext(video)[0] + ".sbv")
+                video_missing = not os.path.isfile(video_path)
             subtitles_missing = not os.path.isfile(srt_path) and not os.path.isfile(sbv_path)
             yt_video_uploaded = row_info["Youtube Video"].value != None
             yt_playlist_set = row_info["Youtube Playlist"].value != None
@@ -75,8 +81,8 @@ for day in conference_days:
                     "Event": event,
                     "Session": session,
                     "Time Slot Title": title,
-                    "Video File": video,
-                    "Full Path": video_path,
+                    "Video File": video if video else "UNKNOWN/MISSING FILE!",
+                    "Full Path": video_path if video_path else "UNKNOWN/MISSING FILE!",
                     "Video Missing": "YES" if video_missing else "",
                     "Subtitles Missing": "YES" if subtitles_missing else "",
                     "YT Video Missing": "YES" if not yt_video_uploaded else "",
