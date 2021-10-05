@@ -19,6 +19,7 @@ if len(sys.argv) < 6:
 discord_guild_id = None
 if setup_discord and len(sys.argv) < 7:
     print("Usage: {} <data sheet.xlsx> <day> <thumbnail file> <font root> <assets root> <discord guild ID>".format(sys.argv[0]))
+    sys.exit(1)
 
 if setup_discord:
     discord_guild_id = sys.argv[6]
