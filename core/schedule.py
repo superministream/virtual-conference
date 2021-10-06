@@ -672,12 +672,20 @@ class Session:
             custom_img.save(img_bytes, format="png")
             return img_bytes
         else:
+            track = self.timeslot_entry(0, "Computer").value
+            computer = self.day.database.get_computer(track)
+            slido_event = computer["Slido Event"].value
+            slido_room = computer["Slido Room"].value
+            slido_url = None
+            if slido_event and slido_room:
+                slido_url = f"https://app.sli.do/event/{slido_event}?section={slido_room}"
             return thumbnail.render_thumbnail(thumbnail_params["background"],
                     thumbnail_params["bold_font"],
                     thumbnail_params["regular_font"],
                     self.title_card_title(),
                     self.title_card_chair(),
-                    self.title_card_schedule())
+                    self.title_card_schedule(),
+                    qr_string=slido_url)
 
     def chat_category_name(self):
         return make_discord_category_name(self.event)

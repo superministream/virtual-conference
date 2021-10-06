@@ -1,4 +1,5 @@
 import io
+import qrcode
 from PIL import Image, ImageDraw, ImageFont
 
 def compute_text_bounds(text, font):
@@ -32,20 +33,26 @@ def fit_text_to_bounds(text, font_file, width, height, max_font_size=0):
 # Renders the thumbnail out to an io.BytesIO object
 # NOTE: You'll probably want to adjust the text placement to better
 # fit your own session title layout
-def render_thumbnail(background_file, bold_font_file, regular_font_file, title, chair, schedule):
+def render_thumbnail(background_file, bold_font_file, regular_font_file, title, chair, schedule, qr_string=None):
     # If we don't have a space between consecutive newlines they'll be lost and we'll miscompute
     # the text height
     schedule = schedule.replace("\n\n", "\n \n")
-    # Assumed 1920x1080, these positions are hard-coded to roughly match the streaming software
+    # Assumed 1920x1080, these positions are hard-coded to fit on the background image nicely
     title_font = fit_text_to_bounds(title, bold_font_file, 1920 - 80, 110)
     chair_font = fit_text_to_bounds(chair, regular_font_file, 1920 - 80, 72)
     schedule_font = fit_text_to_bounds(schedule, regular_font_file, 1920 - 100, 680, max_font_size=40)
 
     background = Image.open(background_file)
+    
+    if qr_string:
+        qr = qrcode.make(qr_string, border=1)
+        qr = qr.resize((300, 300), resample=Image.NEAREST)
+        background.paste(qr, (1920-300,1080-300, 1920, 1080))
+
     draw = ImageDraw.Draw(background)
-    draw.text((24, 180), title, font=title_font, fill="black")
-    draw.text((24, 280), chair, font=chair_font, fill="black")
-    draw.text((24, 370), schedule, font=schedule_font, fill="black")
+    draw.text((24, 180), title, font=title_font, fill="white")
+    draw.text((24, 280), chair, font=chair_font, fill="white")
+    draw.text((24, 370), schedule, font=schedule_font, fill="white")
 
     img_bytes = io.BytesIO()
     background.save(img_bytes, format="png")
