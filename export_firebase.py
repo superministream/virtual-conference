@@ -76,6 +76,13 @@ for d in conference_days:
             "special_notes": " ".join(v.special_notes())
         }
 
+        # Show some sponsor ads
+        session_info["stages"].append({
+            "state": "WATCHING",
+            "title": "The session will begin soon",
+            "youtubeId": "s6CZzP6zT7s"
+        })
+
         # Each session begins with the image preview of the session info
         session_info["stages"].append({
             "imageUrl": session_id + ".png",
@@ -156,6 +163,13 @@ for d in conference_days:
                 qa_stage["time_end"] = schedule.format_time_iso8601_utc(timeslot_time[1])
 
             session_info["stages"].append(qa_stage)
+
+        # End with some sponsor ads
+        session_info["stages"].append({
+            "state": "WATCHING",
+            "title": "Thanks for attending!",
+            "youtubeId": "s6CZzP6zT7s"
+        })
 
         # The session concludes by returning to the bumper
         session_info["stages"].append({
