@@ -216,7 +216,6 @@ for r in range(2, video_table.table.max_row + 1):
         break
 
     print(f"{video_info[video_file_field].value}")
-    videos_uploaded += 1
 
     title = schedule.make_youtube_title(video_info[title_field].value)
 
@@ -239,6 +238,7 @@ for r in range(2, video_table.table.max_row + 1):
             print("----")
             continue
 
+        videos_uploaded += 1
         try:
             upload_response = upload_video(video, title, description, auth)
             print(upload_response)
