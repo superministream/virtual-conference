@@ -79,8 +79,8 @@ for d in conference_days:
         # Show some sponsor ads
         session_info["stages"].append({
             "state": "WATCHING",
-            "title": "The session will begin soon",
-            "youtubeId": "s6CZzP6zT7s"
+            "title": "Thanks to our Generous Sponsors!",
+            "youtubeId": "yxHYxo2rT8c"
         })
 
         # Each session begins with the image preview of the session info
@@ -167,8 +167,8 @@ for d in conference_days:
         # End with some sponsor ads
         session_info["stages"].append({
             "state": "WATCHING",
-            "title": "Thanks for attending!",
-            "youtubeId": "s6CZzP6zT7s"
+            "title": "Thanks to our Generous Sponsors!",
+            "youtubeId": "yxHYxo2rT8c"
         })
 
         # The session concludes by returning to the bumper

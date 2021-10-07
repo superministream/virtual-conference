@@ -14,13 +14,16 @@ if len(sys.argv) != 6:
 database = schedule.Database(sys.argv[1])
 thumbnail_params = {
     "background": sys.argv[2],
-    "bold_font": os.path.join(sys.argv[3], "title-font.ttf"),
-    "regular_font": os.path.join(sys.argv[3], "body-font.ttf"),
+    "fonts": {
+        "bold": os.path.join(sys.argv[3], "bold-font.ttf"),
+        "italic": os.path.join(sys.argv[3], "italic-font.ttf"),
+        "regular": os.path.join(sys.argv[3], "regular-font.ttf"),
+    },
     "asset_root_dir": sys.argv[4]
 }
 output_dir = sys.argv[5]
 
-conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
+conference_days = ["demoday"] #["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for d in conference_days:
     day = database.get_day(d)
     sessions = day.get_sessions(False)

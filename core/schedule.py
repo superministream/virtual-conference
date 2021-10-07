@@ -680,8 +680,7 @@ class Session:
             if slido_event and slido_room:
                 slido_url = f"https://app.sli.do/event/{slido_event}?section={slido_room}"
             return thumbnail.render_thumbnail(thumbnail_params["background"],
-                    thumbnail_params["bold_font"],
-                    thumbnail_params["regular_font"],
+                    thumbnail_params["fonts"],
                     self.title_card_title(),
                     self.title_card_chair(),
                     self.title_card_schedule(),
@@ -867,9 +866,9 @@ class Session:
 
         # TODO: Manage Discord Embed size limits: https://discordjs.guide/popular-topics/embeds.html#embed-limits
         # Will we actually hit these? Can finish test scheduling the week and if not, ignore it for now
-        if self.timeslot_entry(0, "Youtube Broadcast").value:
-            track = self.timeslot_entry(0, "Computer").value
-            embed["description"] = "Room URL: " + "TODO WILL WE NEED URL, room = " + str(track)
+        #if self.timeslot_entry(0, "Youtube Broadcast").value:
+        #track = self.timeslot_entry(0, "Computer").value
+        #embed["description"] = "Room URL: " + "TODO WILL WE NEED URL, room = " + str(track)
 
         session_time = self.session_time()
         embed["fields"].append({
