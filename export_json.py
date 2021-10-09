@@ -198,6 +198,50 @@ for d in conference_days:
         else:
             all_sessions[event_prefix]["sessions"].append(session_info)
 
+# Also export posters
+poster_table = database.workbook.get_table("posters")
+all_posters = {}
+print("Exporting posters")
+for r in poster_table.items():
+    if not r["Event ID"].value:
+        break
+
+    poster_uid = r["Event ID"].value + "-" + str(r["ID"].value)
+    poster_info = {
+        "title": r["Title"].value,
+        "authors": r["Authors"].value.split("|"),
+        "uid": poster_uid,
+        "discord_channel": r["Discord Channel ID"].value
+    }
+    all_posters[poster_uid] = poster_info
+
+    if export_images:
+        pdf_file = r["PDF File"].value
+        if pdf_file:
+            pdf_file = os.path.join(img_asset_dir, pdf_file)
+            if not os.path.isfile(pdf_file):
+                print(f"Error! Failed to find poster PDF {pdf_file}")
+                continue
+
+            out_pdf_file = os.path.join(output_dir, f"{poster_uid}.pdf")
+            shutil.copy(pdf_file, out_pdf_file)
+
+        image_file = r["Image File"].value
+        if image_file:
+            image_file = os.path.join(img_asset_dir, image_file)
+            if not os.path.isfile(image_file):
+                print(f"Error! Failed to find poster image file {image_file}")
+                continue
+
+            out_path = os.path.join(output_dir, f"{poster_uid}.png")
+            try:
+                if image_file.endswith("png"):
+                    shutil.copy(image_file, out_path)
+                else:
+                    im = Image.open(image_file)
+                    im.save(out_path)
+            except Exception as e:
+                print("Image {} failed due to {}".format(image_file, e))
 
 if export_ics:
     with open(os.path.join(output_dir, schedule.CONFERENCE_NAME + ".ics"), "w", encoding="utf8") as f:
@@ -207,9 +251,11 @@ if export_ics:
         with open(os.path.join(output_dir, k  + ".ics"), "w", encoding="utf8") as f:
             f.write(str(v))
 
-
 with open("paper_list.json", "w", encoding="utf8") as f:
     json.dump(paper_list, f, indent=4)
 
 with open("session_list.json", "w", encoding="utf8") as f:
     json.dump(all_sessions, f, indent=4)
+
+with open("poster_list.json", "w", encoding="utf8") as f:
+    json.dump(all_posters, f, indent=4)

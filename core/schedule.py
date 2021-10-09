@@ -209,9 +209,9 @@ def schedule_zoom_meeting(auth, title, password, start, end, agenda, host, alter
 
 
 class Database:
-    def __init__(self, workbook_name, youtube=False, email=False, use_pickled_credentials=False):
+    def __init__(self, workbook_name, youtube=False, email=False, discord=False, eventbrite=False, use_pickled_credentials=False):
         self.workbook = excel_db.open(workbook_name)
-        if youtube or email:
+        if youtube or email or discord or eventbrite:
             self.auth = conf_auth.Authentication(youtube=youtube, email=email, use_pickled_credentials=use_pickled_credentials)
         else:
             self.auth = None
