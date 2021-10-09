@@ -20,7 +20,7 @@ Usage:
 
 arguments = docopt(USAGE)
 
-sheet_name = "thursday"
+sheet_name = "monday"
 title_field = "Time Slot Title"
 authors_field = "Authors"
 description_field = "Abstract"
@@ -221,7 +221,12 @@ for r in range(2, video_table.table.max_row + 1):
 
     description = "Title: " + video_info[title_field].value
 
-    authors = video_info[authors_field].value.replace("|", ", ")
+    authors = None
+    if video_info[authors_field].value:
+        authors = video_info[authors_field].value.replace("|", ", ")
+    else:
+        authors = video_info["Contributor(s)"].value.replace("|", ", ")
+
     description += "\nAuthors: " + authors
     if video_info[description_field].value:
         description += "\n" + video_info[description_field].value

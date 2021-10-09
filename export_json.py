@@ -107,11 +107,13 @@ for d in conference_days:
                 for c in slot_chairs:
                     chairs.add(c)
 
+            contributors = v.timeslot_entry(i, "Contributor(s)").value
+
             timeslot_time = v.timeslot_time(i)
             time_slot_info = {
                 "type": v.timeslot_entry(i, "Time Slot Type").value,
                 "title": v.timeslot_entry(i, "Time Slot Title").value,
-                "contributors": v.timeslot_entry(i, "Contributor(s)").value.split("|"),
+                "contributors": contributors.split("|") if contributors else "",
                 "abstract": v.timeslot_entry(i, "Abstract").value,
                 "time_start": schedule.format_time_iso8601_utc(timeslot_time[0]),
                 "time_end": schedule.format_time_iso8601_utc(timeslot_time[1]),
@@ -146,10 +148,11 @@ for d in conference_days:
                     special_notes = special_notes.split("|")
 
                 paper_award = ""
-                if v.timeslot_entry(i, "Session ID").value.startswith("vis-opening"):
-                    paper_award = "best"
-                elif special_notes and "Honorable Mention" in special_notes:
-                    paper_award = "honorable"
+                if special_notes:
+                    if "best" in special_notes:
+                        paper_award = "best"
+                    elif "honorable" in special_notes:
+                        paper_award = "honorable"
 
                 image_caption = v.timeslot_entry(i, "Image Caption").value
                 external_pdf_link = v.timeslot_entry(i, "PDF Link").value
