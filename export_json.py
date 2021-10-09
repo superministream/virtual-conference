@@ -211,7 +211,9 @@ for r in poster_table.items():
         "title": r["Title"].value,
         "authors": r["Authors"].value.split("|"),
         "uid": poster_uid,
-        "discord_channel": r["Discord Channel ID"].value
+        "event": r["Event"].value,
+        "discord_channel": r["Discord Channel ID"].value,
+        "has_image": r["Image File"].value != None
     }
     all_posters[poster_uid] = poster_info
 

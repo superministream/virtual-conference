@@ -31,7 +31,7 @@ import core.thumbnail as thumbnail
 conf_tz = timezone(-timedelta(hours=5))
 
 # Your conference name
-CONFERENCE_NAME = "VIS Testing 2021"
+CONFERENCE_NAME = "VIS 2021"
 # NOTE: This should be a URL to a wide aspect ratio conference logo image
 # See the image at the URL for an example
 CONFERENCE_LOGO_URL = "https://i.imgur.com/jxtqPae.png"

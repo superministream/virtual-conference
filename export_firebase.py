@@ -77,10 +77,14 @@ for d in conference_days:
         }
 
         # Show some sponsor ads
+        bumper_video = room_info["Bumper Video"].value
+        if bumper_video:
+            bumper_video = schedule.match_youtube_id(bumper_video)
+
         session_info["stages"].append({
             "state": "WATCHING",
             "title": "Thanks to our Generous Sponsors!",
-            "youtubeId": "yxHYxo2rT8c"
+            "youtubeId": bumper_video
         })
 
         # Each session begins with the image preview of the session info
@@ -106,12 +110,18 @@ for d in conference_days:
         for i in range(v.num_timeslots()):
             timeslot_title = v.timeslot_entry(i, "Time Slot Title").value
             timeslot_time = v.timeslot_time(i)
+            timeslot_uid = v.timeslot_entry(i, "UID").value
+            if not timeslot_uid:
+                event_prefix = v.timeslot_entry(i, "Event Prefix").value
+                session_id = v.timeslot_entry(i, "Session ID")
+                timeslot_uid = f"{event_prefix}-{session_id}-t{i}"
+
             time_slot_info = {
                 "title": timeslot_title,
                 "state": "WATCHING",
                 "contributors": v.timeslot_entry(i, "Contributor(s)").value.split("|"),
                 "time_start": schedule.format_time_iso8601_utc(timeslot_time[0]),
-                "time_end": schedule.format_time_iso8601_utc(timeslot_time[1]),
+                "time_end": schedule.format_time_iso8601_utc(timeslot_time[1])
             }
 
             time_slot_type = v.timeslot_entry(i, "Time Slot Type").value
@@ -156,7 +166,8 @@ for d in conference_days:
                 "live": True,
                 "title": f"{timeslot_title} - Q&A",
                 "state": "QA",
-                "youtubeId": livestream_youtubeid
+                "youtubeId": livestream_youtubeid,
+                "slido_archive_label": timeslot_uid
             }
             if video_length != 0:
                 qa_stage["time_start"] = time_slot_info["time_end"]
@@ -168,7 +179,7 @@ for d in conference_days:
         session_info["stages"].append({
             "state": "WATCHING",
             "title": "Thanks to our Generous Sponsors!",
-            "youtubeId": "yxHYxo2rT8c"
+            "youtubeId": bumper_video
         })
 
         # The session concludes by returning to the bumper
