@@ -73,7 +73,7 @@ for d in conference_days:
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
             "stages": [],
-            "special_notes": " ".join(v.special_notes())
+            "notes": ", ".join(v.special_notes())
         }
 
         # Show some sponsor ads
@@ -167,7 +167,7 @@ for d in conference_days:
                 "title": f"{timeslot_title} - Q&A",
                 "state": "QA",
                 "youtubeId": livestream_youtubeid,
-                "slido_archive_label": timeslot_uid
+                "notes": f"slido archive label {timeslot_uid}"
             }
             if video_length != 0:
                 qa_stage["time_start"] = time_slot_info["time_end"]
