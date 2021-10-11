@@ -29,8 +29,11 @@ thumbnail_params = {
     "background": sys.argv[3],
     # NOTE: You'll want to change these font file names with the ones you're using
     # in your streaming software.
-    "bold_font": os.path.join(sys.argv[4], "title-font.ttf"),
-    "regular_font": os.path.join(sys.argv[4], "body-font.ttf"),
+    "fonts": {
+        "bold": os.path.join(sys.argv[4], "bold-font.ttf"),
+        "italic": os.path.join(sys.argv[4], "italic-font.ttf"),
+        "regular": os.path.join(sys.argv[4], "regular-font.ttf"),
+    },
     "asset_root_dir": sys.argv[5]
 }
 
