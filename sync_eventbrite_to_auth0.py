@@ -77,9 +77,11 @@ def send_register_email(email, session, logo_attachment, name, password):
             presentations, workshops, tutorials, panels, and more!
             This email contains your login information for the virtual conference website:
             <a href="https://virtual.ieeevis.org/">https://virtual.ieeevis.org/</a>.
-            The website contains the conference schedule, links to
-            the YouTube videos and Discord chat channels for each session, and links to download
-            the papers. Try shuffling the <a href="https://virtual.ieeevis.org/papers.html">paper browser</a> by serendipity to find
+            The website contains the conference schedule, the virtual conference rooms
+            where you can watch the presentations, Discord chat channels for each session,
+            and links to download
+            the papers. Try shuffling the
+            <a href="https://virtual.ieeevis.org/papers.html">paper browser</a> by serendipity to find
             something totally new!
             </p>
             <ul>
@@ -96,9 +98,11 @@ def send_register_email(email, session, logo_attachment, name, password):
             presentations, workshops, tutorials, panels, and more!
             This email contains your login information for the virtual conference website:
             https://virtual.ieeevis.org/.
-            The website contains the conference schedule, links to
-            the YouTube videos and Discord chat channels for each session, and links to download
-            the papers. Try shuffling the paper browser https://virtual.ieeevis.org/papers.html by serendipity to find
+            The website contains the conference schedule, the virtual conference rooms where
+            you can watch the presentations,
+            Discord chat channels for each session, and links to download
+            the papers. Try shuffling the paper browser
+            https://virtual.ieeevis.org/papers.html by serendipity to find
             something totally new!
 
             User name: {email}
