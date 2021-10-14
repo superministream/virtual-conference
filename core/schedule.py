@@ -339,7 +339,8 @@ class Session:
         return match_discord_url(self.timeslot_entry(0, "Discord Link").value)
 
     def setup_time(self):
-        if self.timeslot_entry(0, "Time Slot Type").value != "Zoom Only":
+        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value 
+        if timeslot_type != "Zoom Only" and timeslot_type != "Gathertown Only":
             return timedelta(minutes=15)
         return timedelta(minutes=0)
 
@@ -384,7 +385,7 @@ class Session:
 
     def start_streaming(self):
         timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
-        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only":
+        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only" or timeslot_type == "Gathertown Only":
             print("Not streaming Zoom/Discord only event")
             return
         computer = self.timeslot_entry(0, "Computer").value
@@ -470,7 +471,7 @@ class Session:
 
     def stop_streaming(self):
         timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
-        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only":
+        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only" or timeslot_type == "Gathertown Only":
             print("No stream to stop for Zoom/Discord only event")
             return
 
@@ -524,7 +525,7 @@ class Session:
     # The tracks are now preassigned this year to match up with the conference tracks better
     def create_virtual_session(self, thumbnail_params):
         timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
-        if timeslot_type != "Zoom Only" and timeslot_type != "No YT No Zoom":
+        if timeslot_type != "Zoom Only" and timeslot_type != "Gathertown Only" and timeslot_type != "No YT No Zoom":
             self.schedule_youtube_broadcast(thumbnail_params)
         self.populate_zoom_info()
 
@@ -761,7 +762,7 @@ class Session:
                 <li>Session Start: {start}</li>
                 <li>Session End: {end}</li>
                 <li>Session Chair(s): {chairs}</li>
-                <li>Session Website: <a href="https://virtual.ieeevis.org/session_{session_id}.html">Virtual Conference Website</a></li>
+                <li>Session Website: <a href="https://virtual.ieeevis.org/year/2021/session_{session_id}.html">Virtual Conference Website</a></li>
                 {schedule}
             </ul>
             <h2>Zoom Meeting Information (DO NOT DISTRIBUTE)</h2>
