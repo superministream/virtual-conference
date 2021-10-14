@@ -398,13 +398,18 @@ class Session:
         stream_key = computer_info["Youtube Stream Key"].value
         stream_key_id = computer_info["Youtube Stream Key ID"].value
 
-        broadcast_status = self.get_broadcast_status()
-        # Broadcast could be in the ready state (configured and a stream key was bound),
-        # or in the created state (configured but no stream key attached yet).
-        if broadcast_status != "ready" and broadcast_status != "created":
-            print("Broadcast {} is in state {}, and cannot be (re-)made live".format(self.youtube_broadcast_id(),
-                broadcast_status))
-            return
+        # We always re-run the YT stream key attachment and Zoom side setup, as we could be
+        # trying to recover from a zoom meeting that was ended accidentally and crashed the stream.
+        # In this case, we need to resetup the Zoom connection to the live stream
+        # and will simply exit when we check the live stream status and see that it's already live.
+
+        # Attach the stream to the broadcast
+        print(f"Attaching stream '{stream_key}' to '{self.youtube_broadcast_id()}'")
+        self.auth.youtube.liveBroadcasts().bind(
+            id=self.youtube_broadcast_id(),
+            part="status",
+            streamId=stream_key_id,
+        ).execute()
 
         # Attach YT broadcast to the Zoom meeting
         livestream_info = {
@@ -419,14 +424,6 @@ class Session:
         if add_livestream.status_code != 204:
             print(f"ERROR: Failed to set live stream for Zoom meeting {self.event_session_title()}")
             sys.exit(1)
-
-        # Attach the stream to the broadcast
-        print(f"Attaching stream '{stream_key}' to '{self.youtube_broadcast_id()}'")
-        self.auth.youtube.liveBroadcasts().bind(
-            id=self.youtube_broadcast_id(),
-            part="status",
-            streamId=stream_key_id,
-        ).execute()
 
         # Start the Zoom meeting livestream
         zoom_params = {
@@ -445,6 +442,14 @@ class Session:
         # Wait about 5s for the Zoom stream to connect, though it seems to be instant
         print("Sleeping 5s for Zoom live stream to begin")
         time.sleep(5)
+
+        broadcast_status = self.get_broadcast_status()
+        # Broadcast could be in the ready state (configured and a stream key was bound),
+        # or in the created state (configured but no stream key attached yet).
+        if broadcast_status != "ready" and broadcast_status != "created":
+            print("Broadcast {} is in state {}, and cannot be (re-)made live".format(self.youtube_broadcast_id(),
+                broadcast_status))
+            return
 
         # Check the status of the live stream to make sure it's running before we make it live
         retries = 0
