@@ -61,6 +61,8 @@ for d in conference_days:
         room_id = v.timeslot_entry(0, "Computer").value
         room_info = database.get_computer(room_id)
 
+        live_caption_url = v.timeslot_entry(0, "Live Captions URL").value
+
         room_str = f"room{room_id}"
         session_info = {
             "currentStatus": {
@@ -73,7 +75,9 @@ for d in conference_days:
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
             "stages": [],
-            "notes": ", ".join(v.special_notes())
+            "notes": ", ".join(v.special_notes()),
+            "has_live_captions": live_caption_url != None,
+            "live_captions_url": live_caption_url
         }
 
         # Show some sponsor ads
