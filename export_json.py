@@ -9,13 +9,14 @@ from datetime import timedelta
 import core.schedule as schedule
 
 if len(sys.argv) < 3:
-    print("Usage: {} <data sheet.xlsx> <base dir> <out_dir> [--img] [--ics]".format(sys.argv[0]))
+    print("Usage: {} <data sheet.xlsx> <base dir> <out_dir> [--img] [--ics] [--pdf]".format(sys.argv[0]))
     sys.exit(1)
 
 database = schedule.Database(sys.argv[1])
 export_images = "--img" in sys.argv
 export_ics = "--ics" in sys.argv
-img_asset_dir = sys.argv[2]
+export_pdfs = "--pdf" in sys.argv
+output_asset_dir = sys.argv[2]
 output_dir = sys.argv[3]
 
 if (export_ics or export_images) and not os.path.exists(output_dir):
@@ -97,6 +98,7 @@ for d in conference_days:
             "zoom_password": zoom_password,
             "ff_link": ff_link,
             "ff_playlist": ff_playlist if ff_playlist else "",
+            "gathertown_event": v.timeslot_entry(0, "Time Slot Type").value == "Gathertown Only",
             "time_slots": []
         }
 
@@ -141,7 +143,7 @@ for d in conference_days:
 
                 image_name = v.timeslot_entry(i, "Preview Image File").value
                 if image_name:
-                    image_name = os.path.join(img_asset_dir, image_name)
+                    image_name = os.path.join(output_asset_dir, image_name)
 
                 special_notes = v.timeslot_entry(i, "Special Notes").value
                 if special_notes:
@@ -156,6 +158,7 @@ for d in conference_days:
 
                 image_caption = v.timeslot_entry(i, "Image Caption").value
                 external_pdf_link = v.timeslot_entry(i, "PDF Link").value
+                pdf_file = v.timeslot_entry(i, "PDF File").value
                 ff_link = v.timeslot_entry(i, "FF Link").value
 
                 paper_list[uid] = {
@@ -170,6 +173,7 @@ for d in conference_days:
                     "paper_award": paper_award,
                     "image_caption": image_caption if image_caption else "",
                     "external_paper_link": external_pdf_link if external_pdf_link else "",
+                    "has_pdf": pdf_file != None,
                     "ff_link": ff_link if ff_link else ""
                 }
 
@@ -183,6 +187,14 @@ for d in conference_days:
                             im.save(out_path)
                     except Exception as e:
                         print("Image {} failed due to {}".format(image_name, e))
+
+                if export_pdfs and pdf_file:
+                    pdf_file = os.path.join(output_asset_dir, pdf_file)
+                    if not os.path.isfile(pdf_file):
+                        print(f"Error! Failed to find poster PDF {pdf_file}")
+                        continue
+                    out_pdf_file = os.path.join(output_dir, f"{uid}.pdf")
+                    shutil.copy(pdf_file, out_pdf_file)
 
         session_info["chair"] = list(chairs)
         if not event_prefix in all_sessions:
@@ -217,10 +229,10 @@ for r in poster_table.items():
     }
     all_posters[poster_uid] = poster_info
 
-    if export_images:
+    if export_pdfs:
         pdf_file = r["PDF File"].value
         if pdf_file:
-            pdf_file = os.path.join(img_asset_dir, pdf_file)
+            pdf_file = os.path.join(output_asset_dir, pdf_file)
             if not os.path.isfile(pdf_file):
                 print(f"Error! Failed to find poster PDF {pdf_file}")
                 continue
@@ -228,9 +240,10 @@ for r in poster_table.items():
             out_pdf_file = os.path.join(output_dir, f"{poster_uid}.pdf")
             shutil.copy(pdf_file, out_pdf_file)
 
+    if export_images:
         image_file = r["Image File"].value
         if image_file:
-            image_file = os.path.join(img_asset_dir, image_file)
+            image_file = os.path.join(output_asset_dir, image_file)
             if not os.path.isfile(image_file):
                 print(f"Error! Failed to find poster image file {image_file}")
                 continue
