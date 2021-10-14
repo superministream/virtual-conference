@@ -218,6 +218,10 @@ for r in poster_table.items():
     if not r["Event ID"].value:
         break
 
+    poster_award = r["Award"].value
+    if poster_award == None:
+        poster_award = ""
+
     poster_uid = r["Event ID"].value + "-" + str(r["ID"].value)
     poster_info = {
         "title": r["Title"].value,
@@ -225,7 +229,8 @@ for r in poster_table.items():
         "uid": poster_uid,
         "event": r["Event"].value,
         "discord_channel": r["Discord Channel ID"].value,
-        "has_image": r["Image File"].value != None
+        "has_image": r["Image File"].value != None,
+        "poster_award": poster_award
     }
     all_posters[poster_uid] = poster_info
 
