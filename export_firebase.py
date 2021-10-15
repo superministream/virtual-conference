@@ -51,6 +51,12 @@ for d in conference_days:
         if not session_id:
             print("No Session ID for {} - {}".format(event, v.timeslot_entry(0, "Session").value))
 
+        if v.num_timeslots() == 1:
+            session_type = v.timeslot_entry(0, "Time Slot Type").value
+            if session_type == "Zoom Only" or session_type == "Gathertown Only":
+                print(f"Skipping Zoom/Gathertown only session '{session_title}'")
+                continue
+
         # Panel sessions can also have fast forwards
         ff_link = ""
         if event_type == "Panel" and v.timeslot_entry(0, "FF Link").value:
@@ -124,9 +130,10 @@ for d in conference_days:
             timeslot_title = v.timeslot_entry(i, "Time Slot Title").value
             timeslot_time = v.timeslot_time(i)
             timeslot_uid = v.timeslot_entry(i, "UID").value
+            paper_uid = timeslot_uid
             if not timeslot_uid:
                 event_prefix = v.timeslot_entry(i, "Event Prefix").value
-                session_id = v.timeslot_entry(i, "Session ID")
+                session_id = v.timeslot_entry(i, "Session ID").value
                 timeslot_uid = f"{event_prefix}-{session_id}-t{i}"
 
             time_slot_info = {
@@ -134,7 +141,8 @@ for d in conference_days:
                 "state": "WATCHING",
                 "contributors": v.timeslot_entry(i, "Contributor(s)").value.split("|"),
                 "time_start": schedule.format_time_iso8601_utc(timeslot_time[0]),
-                "time_end": schedule.format_time_iso8601_utc(timeslot_time[1])
+                "time_end": schedule.format_time_iso8601_utc(timeslot_time[1]),
+                "paper_uid": paper_uid if paper_uid else ""
             }
 
             time_slot_type = v.timeslot_entry(i, "Time Slot Type").value
