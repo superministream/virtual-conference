@@ -80,6 +80,15 @@ for d in conference_days:
             "live_captions_url": live_caption_url
         }
 
+        # Each session begins with the image preview of the session info to show
+        # before the session has begun setup. This is so we have something sensible to
+        # put on the conference page layout before things even begin
+        session_info["stages"].append({
+            "imageUrl": session_id + ".png",
+            "state": "PREVIEW",
+            "title": "The session will begin soon"
+        })
+
         # Show some sponsor ads
         bumper_video = room_info["Bumper Video"].value
         if bumper_video:
