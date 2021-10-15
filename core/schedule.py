@@ -980,7 +980,7 @@ class Session:
             text += "\nEvent Webpage: {}".format(self.timeslot_entry(0, "Event URL").value)
 
         # NOTE: You'll want to replace this with the link to your conference session page
-        text += "\nSession Webpage: https://virtual.ieeevis.org/session_{}.html".format(self.timeslot_entry(0, "Session ID").value)
+        text += "\nSession Webpage: https://virtual.ieeevis.org/year/2021/session_{}.html".format(self.timeslot_entry(0, "Session ID").value)
 
         text += "\nSession start: " + format_time(session_time[0]) + \
                 "\nSession end: " + format_time(session_time[1])
