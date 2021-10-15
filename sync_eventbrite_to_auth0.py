@@ -159,6 +159,7 @@ def get_new_eventbrite(session):
     eventbrite_registrations = []
     # Page indices start at 1 inclusive
     for i in range(resume_page, last_page + 1):
+        time.sleep(1)
         # Get the resume page and then all pages after til we've hit the end
         args = {
             'page': i
