@@ -99,7 +99,8 @@ async def on_ready():
         channel = [c for c in guild.text_channels if str(c.id) == channel_id]
         if len(channel) > 0:
             await channel[0].send(embed=discord.Embed.from_dict(embed))
-            await channel[0].send(embed=discord.Embed.from_dict(s.discord_embed_dict()))
+            session_start_info = await channel[0].send(embed=discord.Embed.from_dict(s.discord_embed_dict()))
+            await session_start_info.pin()
 
     print("Start/End messages sent, hit Ctrl-C to kill the bot")
 
