@@ -10,14 +10,14 @@ if len(sys.argv) < 3:
 schedule_db = schedule.Database(sys.argv[1], zoom=True)
 day = sys.argv[2]
 
-print("Note: Start URL expiry times are in your local time zone")
-
 computers = schedule_db.computers.items()
 for c in computers:
     # Populate the info on the computer, then copy it to the day's schedule
     if c[f"Zoom URL {day}"].value:
         meeting_id = c[f"Zoom Meeting ID {day}"].value
         requested_url_expires = datetime.now() + timedelta(hours=2)
+        # Convert to conference time zone
+        requested_url_expires = requested_url_expires.astimezone(schedule.conf_tz)
         start_url = schedule.get_zoom_meeting_start_url(schedule_db.auth, meeting_id)
 
         c[f"Zoom Start URL {day}"].value = start_url
