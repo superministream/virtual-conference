@@ -82,7 +82,7 @@ for c in computers:
                 "Conference", host, alternative_hosts=alternative_hosts)
         c[f"Zoom URL {day_name}"].value = zoom_info["join_url"]
         c[f"Zoom Meeting ID {day_name}"].value = str(zoom_info["id"])
-        c[f"Zoom password {day_name}"].value = password
+        c[f"Zoom Password {day_name}"].value = password
 
 database.save(day_name + "_scheduled.xlsx")
 

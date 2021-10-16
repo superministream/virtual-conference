@@ -207,11 +207,15 @@ def schedule_zoom_meeting(auth, title, password, start, end, agenda, host, alter
             json=meeting_info, headers=auth.zoom).json()
     return zoom_info
 
+def get_zoom_meeting_start_url(auth, meeting_id):
+    zoom_info = requests.get("https://api.zoom.us/v2/meetings/{}".format(meeting_id),
+            headers=auth.zoom).json()
+    return zoom_info["start_url"]
 
 class Database:
-    def __init__(self, workbook_name, youtube=False, email=False, discord=False, eventbrite=False, use_pickled_credentials=False):
+    def __init__(self, workbook_name, youtube=False, email=False, discord=False, eventbrite=False, zoom=False, use_pickled_credentials=False):
         self.workbook = excel_db.open(workbook_name)
-        if youtube or email or discord or eventbrite:
+        if youtube or email or discord or eventbrite or zoom:
             self.auth = conf_auth.Authentication(youtube=youtube, email=email, use_pickled_credentials=use_pickled_credentials)
         else:
             self.auth = None
@@ -543,7 +547,7 @@ class Session:
         computer = self.day.database.get_computer(track)
         zoom_url = computer[f"Zoom URL {day_name}"].value
         zoom_meeting_id = computer[f"Zoom Meeting ID {day_name}"].value
-        zoom_password = computer[f"Zoom password {day_name}"].value
+        zoom_password = computer[f"Zoom Password {day_name}"].value
 
         # Fill in the Zoom info in the sheet
         for t in range(0, len(self.timeslots)):
@@ -855,7 +859,7 @@ class Session:
         alternative_text = """{schedule}
         Zoom URL: {zoom_url}
         Zoom ID: {zoom_id}
-        Zoom password: {zoom_password}
+        Zoom Password: {zoom_password}
         Discord URL: {discord_url}""".format(schedule=str(self),
             zoom_url=self.timeslot_entry(0, "Zoom URL").value,
             zoom_id=self.timeslot_entry(0, "Zoom Meeting ID").value,
