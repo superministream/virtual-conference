@@ -579,6 +579,10 @@ class Session:
         headers = self.auth.zoom
         meeting_id = self.get_zoom_meeting_id()
         meeting_info = requests.get("https://api.zoom.us/v2/meetings/{}".format(meeting_id), headers=headers).json()
+        if "code" in meeting_info:
+            print("Failed to get meeting info")
+            print(meeting_info)
+            return None
         return meeting_info
 
     def make_youtube_title(self):
@@ -734,18 +738,21 @@ class Session:
         # List two numbers for each country, and the one click phone number.
         # Zoom already sends the numbers sorted by country, so no need to re-group them here
         zoom_call_info = ""
-        listed_countries = {number["country"]: 0 for number in zoom_meeting_info["settings"]["global_dial_in_numbers"]}
-        for number in zoom_meeting_info["settings"]["global_dial_in_numbers"]:
-            if listed_countries[number["country"]] == 1:
-                continue
-            listed_countries[number["country"]] += 1
+        zoom_password = ""
+        if zoom_meeting_info:
+            zoom_password = zoom_meeting_info["pstn_password"]
+            listed_countries = {number["country"]: 0 for number in zoom_meeting_info["settings"]["global_dial_in_numbers"]}
+            for number in zoom_meeting_info["settings"]["global_dial_in_numbers"]:
+                if listed_countries[number["country"]] == 1:
+                    continue
+                listed_countries[number["country"]] += 1
 
-            one_click_number = "{},,{}#,,{}#".format(number["number"],
-                    self.timeslot_entry(0, "Zoom Meeting ID").value,
-                    zoom_meeting_info["pstn_password"]).replace(" ", "")
+                one_click_number = "{},,{}#,,{}#".format(number["number"],
+                        self.timeslot_entry(0, "Zoom Meeting ID").value,
+                        zoom_meeting_info["pstn_password"]).replace(" ", "")
 
-            zoom_call_info += "<li><b>{}</b>: {} ({})</li><ul><li><b>One-click</b>: {}</li></ul>".format(
-                    number["country_name"], number["number"], number["type"], one_click_number)
+                zoom_call_info += "<li><b>{}</b>: {} ({})</li><ul><li><b>One-click</b>: {}</li></ul>".format(
+                        number["country_name"], number["number"], number["type"], one_click_number)
 
 
         track = self.get_track()
@@ -840,7 +847,7 @@ class Session:
                     zoom_url=self.timeslot_entry(0, "Zoom URL").value,
                     zoom_id=self.timeslot_entry(0, "Zoom Meeting ID").value,
                     zoom_password=self.timeslot_entry(0, "Zoom Password").value,
-                    zoom_passcode=zoom_meeting_info["pstn_password"],
+                    zoom_passcode=zoom_password,
                     zoom_call_info=zoom_call_info,
                     discord_invite=self.timeslot_entry(0, "Discord Invite Link").value,
                     discord_url=self.timeslot_entry(0, "Discord Link").value,
