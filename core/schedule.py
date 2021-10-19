@@ -589,6 +589,13 @@ class Session:
         # Similar rules for the description as the title, but max length of 5000 characters
         return make_youtube_description(str(self))
 
+    def get_slido_url(self):
+        track = self.get_track()
+        computer = self.day.database.get_computer(track)
+        slido_event = computer["Slido Event"].value
+        slido_room = computer["Slido Room"].value
+        return f"https://app.sli.do/event/{slido_event}?section={slido_room}"
+
     # Schedule the Youtube broadcast for the sessions and populate the sheet
     def schedule_youtube_broadcast(self, thumbnail_params):
         title = self.make_youtube_title()
@@ -740,15 +747,18 @@ class Session:
             zoom_call_info += "<li><b>{}</b>: {} ({})</li><ul><li><b>One-click</b>: {}</li></ul>".format(
                     number["country_name"], number["number"], number["type"], one_click_number)
 
+
+        track = self.get_track()
+        computer = self.day.database.get_computer(track)
+        room_link = f"https://virtual.ieeevis.org/year/2021/room_room{computer['ID'].value}.html"
+        room_name = computer["Name"].value
+
         # NOTE: You'll want to replace this email content with your own, with links to the corresponding
         # conference webpages and your own schedule instructions.
         return """
             <div style="margin-bottom:.5rem;margin-top:.5rem;">
             <h1>{session_title}</h1>
             <h2>Instructions</h2>
-                <p>Please see our guide on <a href="http://ieeevis.org/year/2020/info/presenter-information/presenting-virtually">
-                presenting at the virtual conference</a> and watch the relevant example session tutorial to see what to expect as
-                a presenter in the virtual conference.</p>
                 <p>
                 <b>Joining the Zoom Meeting.</b> The Zoom meeting will begin 15 minutes before
                 the session starts to allow the contributors, chair, and technician to set up
@@ -760,6 +770,32 @@ class Session:
                 The Zoom meeting information is included below in this email.
                 </p>
                 <p>
+                <b>During your Session.</b>
+                Do not watch yourself on the live viewer page during the session, as
+                this can cause audio feedback when you are live and be disorienting due to the
+                slight delay from the live stream. When the technican informs you that you are
+                live, <b>you are live!</b>
+                If your session contains recorded videos, the technician will alternate
+                between showing these videos in the player page and showing the Zoom live stream.
+                We recommend you turn your video off and mute yourself when the videos are being
+                played back.
+                </p>
+                <p>
+                <b>Live Q&A.</b>
+                After each talk there will be a live Q&A portion, depending on the session structure
+                (associated events and workshops may vary). The chair and presenter will both turn on
+                their video and unmute themselves for this portion before the stream is made live.
+                The chair should read aloud questions from slido so that they are recorded on the
+                live stream.
+                </p>
+                <p>
+                <b>As the Chair.</b>
+                The role of a chair in the virtual conference is similar to that in an in person
+                conference. You'll be responsible for introducing the talk and reading questions from
+                slido aloud on the stream to be answered by the speaker.
+                </p>
+                <p>
+                <b>At the end of your session.</b>
                 There is a <b>hard cut-off</b> 10 minutes after
                 the session is scheduled to end to allow time to set up the next session,
                 so please keep to the session schedule.
@@ -772,6 +808,7 @@ class Session:
                 <li>Session End: {end}</li>
                 <li>Session Chair(s): {chairs}</li>
                 <li>Session Website: <a href="https://virtual.ieeevis.org/year/2021/session_{session_id}.html">Virtual Conference Website</a></li>
+                <li>Session Room: <a href="{room_link}">{room_name}</a>.</li>
                 {schedule}
             </ul>
             <h2>Zoom Meeting Information (DO NOT DISTRIBUTE)</h2>
@@ -791,6 +828,8 @@ class Session:
                 <li>Discord Invitation: <a href="{discord_invite}">{discord_invite}</a></li>
                 <li>Discord Channel: <a href="{discord_url}">{discord_url}</a></li>
             </ul>
+            <h2>Slido Information</h2>
+            The slido for your session will be <a href="{slido_url}">here</a>.
             </div>
             """.format(session_title=self.event_session_title(),
                     start=format_time(session_time[0]),
@@ -803,7 +842,10 @@ class Session:
                     zoom_passcode=zoom_meeting_info["pstn_password"],
                     zoom_call_info=zoom_call_info,
                     discord_invite=self.timeslot_entry(0, "Discord Invite Link").value,
-                    discord_url=self.timeslot_entry(0, "Discord Link").value)
+                    discord_url=self.timeslot_entry(0, "Discord Link").value,
+                    slido_url=self.get_slido_url(),
+                    room_link=room_link,
+                    room_name=room_name)
 
     # Email the contributor and chair who will be presenting in the session(s)
     # Multiple sessions can be taken for tutorials, where we only want to send one email
