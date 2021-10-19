@@ -168,7 +168,7 @@ for r in range(2, video_table.table.max_row + 1):
     video = os.path.join(video_root_path, video_info[video_file_field].value)
     if not os.path.isfile(video):
         all_files_found = False
-        print("Video {} was not found".format(video))
+        print(f"Video '{video}' was not found")
     else:
         total_bytes += os.path.getsize(video)
         to_upload.append(video)

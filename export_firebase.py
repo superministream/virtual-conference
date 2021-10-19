@@ -12,9 +12,13 @@ if len(sys.argv) < 3:
     sys.exit(1)
 
 def get_video_length(video_file):
-    mi = pymediainfo.MediaInfo.parse(video_file)
-    general_track = [t for t in mi.tracks if t.track_type == "General"][0]
-    return general_track.to_data()["duration"] / 1000
+    try:
+        mi = pymediainfo.MediaInfo.parse(video_file)
+        general_track = [t for t in mi.tracks if t.track_type == "General"][0]
+        return general_track.to_data()["duration"] / 1000
+    except Exception as e:
+        print(f"Failed to get video length due to {e}")
+        return 0
 
 
 database = schedule.Database(sys.argv[1])
@@ -33,8 +37,7 @@ for c in database.computers.items():
     }
 
 all_sessions = {}
-#conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
-conference_days = ["demoday"]
+conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for d in conference_days:
     print(d)
     day = database.get_day(d)
@@ -83,7 +86,8 @@ for d in conference_days:
             "stages": [],
             "notes": ", ".join(v.special_notes()),
             "has_live_captions": live_caption_url != None,
-            "live_captions_url": live_caption_url
+            "live_captions_url": live_caption_url,
+            "zoom_url": v.timeslot_entry(0, "Zoom URL").value
         }
 
         # Each session begins with the image preview of the session info to show
