@@ -137,12 +137,6 @@ def get_any_password_requests():
     return password_requests
 
 def get_new_eventbrite(session):
-    eventbrite_resume_page_file = "eventbrite_resume_page.json"
-    resume_page = 1
-    if os.path.isfile(eventbrite_resume_page_file):
-        with open(eventbrite_resume_page_file) as f:
-            resume_page = json.load(f)["last_page"]
-
     eventbrite_event_id = session.eventbrite_event_id
 
     # Get the resource URI for the attendee page since we have to do the paginated
@@ -158,9 +152,9 @@ def get_new_eventbrite(session):
 
     eventbrite_registrations = []
     # Page indices start at 1 inclusive
-    for i in range(resume_page, last_page + 1):
-        time.sleep(1)
-        # Get the resume page and then all pages after til we've hit the end
+    for i in range(1, last_page + 1):
+        print(f"Fetching eventbrite registrations page {i} of {last_page}")
+        time.sleep(0.1)
         args = {
             'page': i
         }
@@ -170,8 +164,6 @@ def get_new_eventbrite(session):
                 a["profile"]["name"],
                 a["profile"]["email"]
             ))
-    with open(eventbrite_resume_page_file, "w") as f:
-        json.dump({"last_page": last_page}, f)
 
     return eventbrite_registrations
 
@@ -221,7 +213,7 @@ def get_all(transmit_to_auth0, session, logo_attachment, max_new=-1):
         password = all_registered[email]["password"]
 
         if session.email:
-            time.sleep(1)
+            time.sleep(0.1)
 
         try: 
             if session.email:
@@ -276,6 +268,6 @@ if __name__ == '__main__':
     while True:
         print("Checking for new registrations")
         get_all(args.auth0, session, logo_attachment, args.limit)
-        time.sleep(5 * 60)
+        time.sleep(10 * 60)
 
 
