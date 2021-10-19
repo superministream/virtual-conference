@@ -760,6 +760,7 @@ class Session:
             <h1>{session_title}</h1>
             <h2>Instructions</h2>
                 <p>
+                Please see <a href="http://ieeevis.org/year/2021/info/presenter-information/presenting-virtually">our guide on presenting virtually</a>.
                 <b>Joining the Zoom Meeting.</b> The Zoom meeting will begin 15 minutes before
                 the session starts to allow the contributors, chair, and technician to set up
                 and test everyone's audio and video set up. Make sure you are in a well-lit
@@ -785,8 +786,8 @@ class Session:
                 After each talk there will be a live Q&A portion, depending on the session structure
                 (associated events and workshops may vary). The chair and presenter will both turn on
                 their video and unmute themselves for this portion before the stream is made live.
-                The chair should read aloud questions from slido so that they are recorded on the
-                live stream.
+                Questions will be asked on slido. The chair can select questions from slido and
+                read them aloud so that they are recorded on the live stream.
                 </p>
                 <p>
                 <b>As the Chair.</b>
