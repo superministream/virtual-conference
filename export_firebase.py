@@ -37,7 +37,7 @@ for c in database.computers.items():
     }
 
 all_sessions = {}
-conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
+conference_days = ["demoday", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for d in conference_days:
     print(d)
     day = database.get_day(d)
