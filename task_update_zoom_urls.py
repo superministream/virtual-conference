@@ -52,8 +52,8 @@ while True:
 
         schedule_db.save(schedule_file)
 
-    next_update = datetime.now() + timedelta(minutes=105)
+    next_update = datetime.now() + timedelta(minutes=125)
     print(f"Update complete. Will refresh URLs at {schedule.format_time(next_update)}")
-    # Wait for 1hr and 45min to update the URLs again, since they expire after 2hrs
-    time.sleep(105 * 60)
+    # Wait for 2hr and 5min to update the URLs again, since they expire after 2hrs
+    time.sleep(125 * 60)
 
