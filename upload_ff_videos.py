@@ -214,7 +214,7 @@ for r in range(2, video_table.table.max_row + 1):
         continue
 
     if videos_uploaded >= 95:
-        print("Stopping after uploading 85 videos, approaching upload limit")
+        print("Stopping after uploading 95 videos, approaching upload limit")
         break
 
     print(f"{video_info[video_file_field].value}")

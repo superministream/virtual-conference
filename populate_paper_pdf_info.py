@@ -40,7 +40,7 @@ for path, dirs, files in os.walk(pdf_root_path):
         filename = os.path.join(path, f)
         relpath = os.path.relpath(filename, start=pdf_root_path)
         pdf_files[make_normalized_title(title)] = {
-            "path": relpath,
+            "path": "papers/" + relpath,
             "used": False
         }
 
