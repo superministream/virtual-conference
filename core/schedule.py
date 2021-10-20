@@ -837,7 +837,8 @@ class Session:
                 <li>Discord Channel: <a href="{discord_url}">{discord_url}</a></li>
             </ul>
             <h2>Slido Information</h2>
-            The slido for your session will be <a href="{slido_url}">here</a>.
+            The slido for your session will be <a href="{slido_url}">here</a>. The slido page will also
+            be embedded on the room page and linked from the session page on the virtual site.
             </div>
             """.format(session_title=self.event_session_title(),
                     start=format_time(session_time[0]),
@@ -883,12 +884,18 @@ class Session:
         subject = CONFERENCE_NAME + ": {} Contributor and Chair Information".format(self.event_session_title())
 
         email_body = """<p>Dear Contributor, Chair, or Organizer,</p>
-                <p>This email contains information for a
-                conference session below in which you are a contributor, chair, or organizer.
-                You will receive one such email per-session and/or tutorial. Please contact the tech committee
-                with any questions.
-                <b>If you are the contact author, but not the presenter, please forward this immediately to the presenting author.</b>""" + \
-                self.contributor_info_html(zoom_meeting_info)
+            <p>This email contains information for a
+            conference session below in which you are a contributor, chair, or organizer.
+            You will receive one such email per-session and/or tutorial. Please contact the tech committee
+            with any questions.
+            </p>
+            <p>
+            <b>If you are the contact author, but not the presenter, please forward this
+            immediately to the presenting author.</b>
+            </p>
+            <p>
+            <b>Note for PANELS:</b> Panel organizers, please forward this email on to your panelists.</p>""" + \
+            self.contributor_info_html(zoom_meeting_info)
 
         # Generate the ICS calendar event attachment
         calendar = self.make_calendar(with_setup_time=True, zoom_info=zoom_meeting_info)
