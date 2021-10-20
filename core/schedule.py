@@ -843,7 +843,7 @@ class Session:
             """.format(session_title=self.event_session_title(),
                     start=format_time(session_time[0]),
                     schedule=schedule_html,
-                    end=format_time(session_time[1]), chairs=" ".join(chairs),
+                    end=format_time(session_time[1]), chairs=", ".join(chairs),
                     session_id=self.timeslot_entry(0, "Session ID").value,
                     zoom_url=self.timeslot_entry(0, "Zoom URL").value,
                     zoom_id=self.timeslot_entry(0, "Zoom Meeting ID").value,
