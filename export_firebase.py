@@ -94,7 +94,7 @@ for d in conference_days:
         # before the session has begun setup. This is so we have something sensible to
         # put on the conference page layout before things even begin
         session_info["stages"].append({
-            "imageUrl": session_id + ".png",
+            "imageUrl": f"https://ieeevis.b-cdn.net/vis_2021/session_images/{session_id}.png",
             "state": "PREVIEW",
             "title": "The session will begin soon"
         })
@@ -112,7 +112,7 @@ for d in conference_days:
 
         # Each session begins with the image preview of the session info
         session_info["stages"].append({
-            "imageUrl": session_id + ".png",
+            "imageUrl": f"https://ieeevis.b-cdn.net/vis_2021/session_images/{session_id}.png",
             "state": "PREVIEW",
             "title": "The session will begin soon"
         })
@@ -192,7 +192,8 @@ for d in conference_days:
                 "title": f"{timeslot_title} - Q&A",
                 "state": "QA",
                 "youtubeId": livestream_youtubeid,
-                "notes": f"slido archive label {timeslot_uid}"
+                "slido_label": timeslot_uid,
+                "notes": f"archive Q&A using slido label"
             }
             if video_length != 0:
                 qa_stage["time_start"] = time_slot_info["time_end"]
