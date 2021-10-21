@@ -130,7 +130,13 @@ for d in conference_days:
             "youtubeId": livestream_youtubeid
         })
 
+        chairs = set()
         for i in range(v.num_timeslots()):
+            if v.timeslot_entry(i, "Chair(s)").value:
+                slot_chairs = v.timeslot_entry(i, "Chair(s)").value.split("|")
+                for c in slot_chairs:
+                    chairs.add(c)
+
             timeslot_title = v.timeslot_entry(i, "Time Slot Title").value
             timeslot_time = v.timeslot_time(i)
             timeslot_uid = v.timeslot_entry(i, "UID").value
@@ -143,7 +149,7 @@ for d in conference_days:
             time_slot_info = {
                 "title": timeslot_title,
                 "state": "WATCHING",
-                "contributors": v.timeslot_entry(i, "Contributor(s)").value.split("|"),
+                "contributors": ", ".join(v.timeslot_entry(i, "Contributor(s)").value.split("|")),
                 "time_start": schedule.format_time_iso8601_utc(timeslot_time[0]),
                 "time_end": schedule.format_time_iso8601_utc(timeslot_time[1]),
                 "paper_uid": paper_uid if paper_uid else ""
@@ -200,6 +206,8 @@ for d in conference_days:
                 qa_stage["time_end"] = schedule.format_time_iso8601_utc(timeslot_time[1])
 
             session_info["stages"].append(qa_stage)
+
+        session_info["chairs"] = ", ".join(chairs)
 
         # End with some sponsor ads
         session_info["stages"].append({
