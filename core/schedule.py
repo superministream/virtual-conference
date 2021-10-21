@@ -861,7 +861,7 @@ class Session:
     # to the tutorial organizers with all the information
     # logo_image is the optional byte array of the image to attach and inline at
     # the bottom of the email
-    def email_contributors(self, logo_image=None):
+    def email_contributors(self, logo_image=None, cc_recipients=None):
         # Collect the list of emails for people in the session
         recipients = set()
         for t in range(self.num_timeslots()):
@@ -894,7 +894,15 @@ class Session:
             immediately to the presenting author.</b>
             </p>
             <p>
-            <b>Note for PANELS:</b> Panel organizers, please forward this email on to your panelists.</p>""" + \
+            <b>Note for PANELS:</b> Panel organizers, please forward this email on to your panelists.
+            </p>
+            <p>
+            <b>Note for Workshop/Associated event organizers:</b> Please forward this email on to presenters
+            and organizers if any are missing who need this Zoom information. If attendees will join your event,
+            the Zoom information will be shown on the VIS website. <b>Do not distribute the Zoom information
+            publicly</b>
+            </p>
+            """ + \
             self.contributor_info_html(zoom_meeting_info)
 
         # Generate the ICS calendar event attachment
@@ -924,7 +932,7 @@ class Session:
             discord_url=self.timeslot_entry(0, "Discord Link").value)
 
         send_html_email(subject, email_body, list(recipients), self.auth.email,
-                alternative_text=alternative_text, attachments=attachments)
+                cc_recipients=cc_recipients, alternative_text=alternative_text, attachments=attachments)
         return len(recipients)
 
     def discord_embed_dict(self):
