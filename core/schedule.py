@@ -894,7 +894,7 @@ class Session:
             immediately to the presenting author.</b>
             </p>
             <p>
-            <b>Note for PANELS:</b> Panel organizers, please forward this email on to your panelists.
+            <b>Note for Panels:</b> Panel organizers, please forward this email on to your panelists.
             </p>
             <p>
             <b>Note for Workshop/Associated event organizers:</b> Please forward this email on to presenters
