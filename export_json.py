@@ -233,6 +233,7 @@ for r in poster_table.items():
         "event": r["Event"].value,
         "discord_channel": r["Discord Channel ID"].value,
         "has_image": r["Image File"].value != None,
+        "has_summary_pdf": r["Summary PDF"].value != None,
         "poster_award": poster_award
     }
     all_posters[poster_uid] = poster_info
@@ -247,6 +248,16 @@ for r in poster_table.items():
 
             out_pdf_file = os.path.join(output_dir, f"{poster_uid}.pdf")
             shutil.copy(pdf_file, out_pdf_file)
+
+        summary_pdf_file = r["Summary PDF"].value
+        if summary_pdf_file:
+            summary_pdf_file = os.path.join(output_asset_dir, summary_pdf_file)
+            if not os.path.isfile(summary_pdf_file):
+                print(f"Error! Failed to find poster PDF {summary_pdf_file}")
+                continue
+
+            out_summary_pdf_file = os.path.join(output_dir, f"{poster_uid}-summary.pdf")
+            shutil.copy(summary_pdf_file, out_summary_pdf_file)
 
     if export_images:
         image_file = r["Image File"].value

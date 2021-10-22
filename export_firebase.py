@@ -209,13 +209,6 @@ for d in conference_days:
 
         session_info["chairs"] = ", ".join(chairs)
 
-        # End with some sponsor ads
-        session_info["stages"].append({
-            "state": "WATCHING",
-            "title": "Thanks to our Generous Sponsors!",
-            "youtubeId": bumper_video
-        })
-
         # The session concludes by returning to the bumper
         session_info["stages"].append({
             "state": "SOCIALIZING",
