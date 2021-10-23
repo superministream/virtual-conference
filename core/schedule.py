@@ -964,6 +964,13 @@ class Session:
                 "inline": False
             })
 
+        track = self.get_track()
+        embed["fields"].append({
+            "name": "Room link",
+            "value": f"https://virtual.ieeevis.org/year/2021/room_room{track}.html",
+            "inline": False
+        })
+
         for t in self.timeslots:
             time = self.day.entry(t, "Time Slot").value
             time_slot_title = self.day.entry(t, "Time Slot Title").value
