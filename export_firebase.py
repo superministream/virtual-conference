@@ -90,16 +90,7 @@ for d in conference_days:
             "zoom_url": v.timeslot_entry(0, "Zoom URL").value
         }
 
-        # Each session begins with the image preview of the session info to show
-        # before the session has begun setup. This is so we have something sensible to
-        # put on the conference page layout before things even begin
-        session_info["stages"].append({
-            "imageUrl": f"https://ieeevis.b-cdn.net/vis_2021/session_images/{session_id}.png",
-            "state": "PREVIEW",
-            "title": "The session will begin soon"
-        })
-
-        # Show some sponsor ads
+        # Each session begins with sponsor bumper
         bumper_video = room_info["Bumper Video"].value
         if bumper_video:
             bumper_video = schedule.match_youtube_id(bumper_video)
