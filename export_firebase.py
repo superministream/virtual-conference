@@ -143,15 +143,14 @@ for d in conference_days:
                 "contributors": ", ".join(v.timeslot_entry(i, "Contributor(s)").value.split("|")),
                 "time_start": schedule.format_time_iso8601_utc(timeslot_time[0]),
                 "time_end": schedule.format_time_iso8601_utc(timeslot_time[1]),
-                "paper_uid": paper_uid if paper_uid else ""
+                "paper_uid": paper_uid if paper_uid else "",
+                "live": False
             }
 
             time_slot_type = v.timeslot_entry(i, "Time Slot Type").value
             if not time_slot_type:
                 time_slot_type = "recorded"
 
-            if time_slot_type == "live":
-                time_slot_info["live"] = True,
 
             video_length = 0
             if time_slot_type == "recorded":
@@ -168,35 +167,39 @@ for d in conference_days:
                 else:
                     print(f"No YouTube video found for talk {timeslot_title} which should have a video")
             elif time_slot_type == "live":
-                if livestream_youtubeid:
-                    time_slot_info["youtubeId"] = livestream_youtubeid
-                else:
-                    print(f"No YouTube video found for live stream {timeslot_title} which should have one")
+                time_slot_info["live"] = True
             elif time_slot_type == "gathertown":
                 time_slot_info["state"] = "SOCIALIZING"
+            elif time_slot_type == "qa":
+                time_slot_info["live"] = True
+                time_slot_info["state"] = "QA"
             else:
                 print(f"Error! Unrecognized time slot type {time_slot_type}")
                 sys.exit(1)
 
+            if time_slot_info["live"]:
+                if livestream_youtubeid:
+                    time_slot_info["youtubeId"] = livestream_youtubeid
+                else:
+                    print(f"No YouTube video found for live stream {timeslot_title} which should have one")
+
             session_info["stages"].append(time_slot_info)
 
-            # Each talk is then followed by a live Q&A portion
-            # TODO: Some events may want to play all the videos through then do Q&A after?
-            # We can handle that or they can work it out with the technician
-            # The Q&A portion then is just used to introduce the next talk directly
-            qa_stage = {
-                "live": True,
-                "title": f"{timeslot_title} - Q&A",
-                "state": "QA",
-                "youtubeId": livestream_youtubeid,
-                "slido_label": timeslot_uid,
-                "notes": f"archive Q&A using slido label"
-            }
-            if video_length != 0:
-                qa_stage["time_start"] = time_slot_info["time_end"]
-                qa_stage["time_end"] = schedule.format_time_iso8601_utc(timeslot_time[1])
+            # Add a Q&A portion if needed
+            if v.timeslot_entry(i, "QA After").value == "y":
+                qa_stage = {
+                    "live": True,
+                    "title": f"{timeslot_title} - Q&A",
+                    "state": "QA",
+                    "youtubeId": livestream_youtubeid,
+                    "slido_label": timeslot_uid,
+                    "notes": f"archive Q&A using slido label"
+                }
+                if video_length != 0:
+                    qa_stage["time_start"] = time_slot_info["time_end"]
+                    qa_stage["time_end"] = schedule.format_time_iso8601_utc(timeslot_time[1])
 
-            session_info["stages"].append(qa_stage)
+                session_info["stages"].append(qa_stage)
 
         session_info["chairs"] = ", ".join(chairs)
 
