@@ -114,14 +114,17 @@ for d in conference_days:
 
 
         # And a live opening by the chair or presenters
-        session_info["stages"].append({
-            "live": True,
-            "title": "Opening",
-            "state": "WATCHING",
-            "youtubeId": livestream_youtubeid
-        })
+        # if the first time slot is an "opening", don't generate a redundant opening
+        if v.timeslot_entry(0, "Time Slot Type").value != "opening":
+            session_info["stages"].append({
+                "live": True,
+                "title": "Opening",
+                "state": "WATCHING",
+                "youtubeId": livestream_youtubeid
+            })
 
         chairs = set()
+        prev_time_slot_end = None
         for i in range(v.num_timeslots()):
             if v.timeslot_entry(i, "Chair(s)").value:
                 slot_chairs = v.timeslot_entry(i, "Chair(s)").value.split("|")
@@ -136,6 +139,25 @@ for d in conference_days:
                 event_prefix = v.timeslot_entry(i, "Event Prefix").value
                 session_id = v.timeslot_entry(i, "Session ID").value
                 timeslot_uid = f"{event_prefix}-{session_id}-t{i}"
+
+            # If we're starting 20min after the previous time slot ended, insert a break
+            # e.g., this is half or all day tutorial/workshop.
+            if prev_time_slot_end and timeslot_time[0] - prev_time_slot_end > timedelta(minutes=20):
+                #print(f"Inserting break between {prev_time_slot_end} and {timeslot_time[0]}")
+                session_info["stages"].append({
+                    "state": "WATCHING",
+                    "title": "The session will resume after the break",
+                    "time_start": schedule.format_time_iso8601_utc(prev_time_slot_end),
+                    "time_end": schedule.format_time_iso8601_utc(timeslot_time[0]),
+                    "youtubeId": bumper_video
+                })
+                session_info["stages"].append({
+                    "imageUrl": f"https://ieeevis.b-cdn.net/vis_2021/session_images/{session_id}.png",
+                    "state": "PREVIEW",
+                    "title": "The session will resume shortly!"
+                })
+
+            prev_time_slot_end = timeslot_time[1]
 
             time_slot_info = {
                 "title": timeslot_title,
@@ -166,7 +188,7 @@ for d in conference_days:
                     time_slot_info["youtubeId"] = schedule.match_youtube_id(talk_video_url)
                 else:
                     print(f"No YouTube video found for talk {timeslot_title} which should have a video")
-            elif time_slot_type == "live":
+            elif time_slot_type == "live" or time_slot_type == "opening":
                 time_slot_info["live"] = True
             elif time_slot_type == "gathertown":
                 time_slot_info["state"] = "SOCIALIZING"
