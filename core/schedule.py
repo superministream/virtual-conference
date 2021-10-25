@@ -387,6 +387,24 @@ class Session:
         ).execute()
         return response["items"][0]["liveStreamingDetails"]
 
+    # Record one or more stream update time stamps to the file
+    def record_stream_update_timestamp(self, timestamps):
+        if not os.path.isdir("./timestamps"):
+            os.makedirs("./timestamps", exist_ok=True)
+        timestamp_file = "./timestamps/" + self.timeslot_entry(0, "Session ID").value + ".json"
+        timestamp_log = []
+        print(time.time())
+        if os.path.isfile(timestamp_file):
+            with open(timestamp_file, "r") as f:
+                timestamp_log = json.load(f)
+
+        timestamp_log.append({
+            "update": format_time(datetime.now().astimezone()),
+            "timestamps": timestamps
+        })
+        with open(timestamp_file, "w") as f:
+            json.dump(timestamp_log, f, indent=4)
+
     def start_streaming(self):
         timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
         if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only" or timeslot_type == "Gathertown Only":
@@ -471,12 +489,16 @@ class Session:
             print("WARNING: Stream on computer {} (key {}) is active, but not healthy. Health status is {}".format(
                 computer, stream_key, stream_health))
 
-        # Make the broadcast live
+        # Make the broadcast live. Record the start/end times of this call in case
+        # We need to resync the stream
+        start_transition_call = int(time.time())
         self.auth.youtube.liveBroadcasts().transition(
             broadcastStatus="live",
             id=self.youtube_broadcast_id(),
             part="status"
         ).execute()
+        end_transition_call = int(time.time())
+        self.record_stream_update_timestamp([start_transition_call, end_transition_call])
 
     def stop_streaming(self):
         timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
