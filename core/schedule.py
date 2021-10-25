@@ -443,9 +443,9 @@ class Session:
             print(start_zoom_stream.text)
             sys.exit(1)
 
-        # Wait about 5s for the Zoom stream to connect, though it seems to be instant
-        print("Sleeping 5s for Zoom live stream to begin")
-        time.sleep(5)
+        # Wait about 9s for the Zoom stream to connect, though it seems to be instant
+        print("Sleeping 8s for Zoom live stream to begin")
+        time.sleep(8)
 
         broadcast_status = self.get_broadcast_status()
         # Broadcast could be in the ready state (configured and a stream key was bound),
