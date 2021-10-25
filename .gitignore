@@ -140,3 +140,4 @@ paper_list.json
 session_list.json
 firebase_data*.json
 poster_list.json
+firebase_sessions/

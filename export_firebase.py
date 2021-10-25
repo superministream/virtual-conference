@@ -38,6 +38,17 @@ for c in database.computers.items():
 
 all_sessions = {}
 conference_days = ["demoday", "demoday-sv", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
+bumper_videos = {
+    "demoday": "https://youtu.be/_txpzLDlzHM",
+    "demoday-sv": "https://youtu.be/_txpzLDlzHM",
+    "sunday": "https://youtu.be/9kRjXgzzTR8",
+    "monday": "https://youtu.be/_txpzLDlzHM",
+    "tuesday": "https://youtu.be/OIl18FcBAhc",
+    "wednesday": "https://youtu.be/NYBWMnsohp8",
+    "thursday": "https://youtu.be/Hh6zlPqskO4",
+    "friday": "https://youtu.be/Kmd2WozTyQE",
+}
+
 for d in conference_days:
     print(d)
     day = database.get_day(d)
@@ -90,10 +101,17 @@ for d in conference_days:
             "zoom_url": v.timeslot_entry(0, "Zoom URL").value
         }
 
+        # Each session begins with the image preview of the session info
+        session_info["stages"].append({
+            "imageUrl": f"https://ieeevis.b-cdn.net/vis_2021/session_images/{session_id}.png",
+            "state": "PREVIEW",
+            "title": "The session will begin soon"
+        })
+
         # Each session begins with sponsor bumper
-        bumper_video = room_info["Bumper Video"].value
-        if bumper_video:
-            bumper_video = schedule.match_youtube_id(bumper_video)
+        #bumper_video = room_info["Bumper Video"].value
+        #if bumper_video:
+        bumper_video = schedule.match_youtube_id(bumper_videos[d])
 
         session_info["stages"].append({
             "state": "WATCHING",
@@ -235,6 +253,14 @@ for d in conference_days:
 
 with open("firebase_data_sessions.json", "w", encoding="utf8") as f:
     json.dump(all_sessions, f, indent=4)
+
+# Output every session to its own JSON file as well
+if not os.path.exists("./firebase_sessions"):
+    os.makedirs("./firebase_sessions", exist_ok=True)
+
+for k, v in all_sessions.items():
+    with open("./firebase_sessions/" + k + ".json", "w", encoding="utf8") as f:
+        json.dump(v, f, indent=4)
 
 with open("firebase_data_rooms.json", "w", encoding="utf8") as f:
     json.dump(rooms, f, indent=4)
