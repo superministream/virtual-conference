@@ -81,7 +81,6 @@ for d in conference_days:
         room_id = v.timeslot_entry(0, "Computer").value
         room_info = database.get_computer(room_id)
 
-        live_caption_url = v.timeslot_entry(0, "Live Captions URL").value
 
         room_str = f"room{room_id}"
         session_info = {
@@ -96,8 +95,6 @@ for d in conference_days:
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
             "stages": [],
             "notes": ", ".join(v.special_notes()),
-            "has_live_captions": live_caption_url != None,
-            "live_captions_url": live_caption_url,
             "zoom_url": v.timeslot_entry(0, "Zoom URL").value
         }
 
@@ -156,7 +153,7 @@ for d in conference_days:
             if not timeslot_uid:
                 event_prefix = v.timeslot_entry(i, "Event Prefix").value
                 session_id = v.timeslot_entry(i, "Session ID").value
-                timeslot_uid = f"{event_prefix}-{session_id}-t{i}"
+                timeslot_uid = f"{session_id}-t{i}"
 
             # If we're starting 20min after the previous time slot ended, insert a break
             # e.g., this is half or all day tutorial/workshop.
@@ -177,6 +174,8 @@ for d in conference_days:
 
             prev_time_slot_end = timeslot_time[1]
 
+            live_caption_url = v.timeslot_entry(i, "Live Captions URL").value
+
             time_slot_info = {
                 "title": timeslot_title,
                 "state": "WATCHING",
@@ -184,6 +183,8 @@ for d in conference_days:
                 "time_start": schedule.format_time_iso8601_utc(timeslot_time[0]),
                 "time_end": schedule.format_time_iso8601_utc(timeslot_time[1]),
                 "paper_uid": paper_uid if paper_uid else "",
+                "has_live_captions": live_caption_url != None,
+                "live_captions_url": live_caption_url,
                 "live": False
             }
 
