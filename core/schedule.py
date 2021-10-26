@@ -348,6 +348,11 @@ class Session:
             return timedelta(minutes=15)
         return timedelta(minutes=0)
 
+    def is_livestreamed(self):
+        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
+        return timeslot_type != "Zoom Only" and timeslot_type != "Discord Only" \
+            and timeslot_type != "Gathertown Only"
+
     def special_notes(self):
         notes = set()
         for t in range(0, len(self.timeslots)):
@@ -405,10 +410,10 @@ class Session:
             json.dump(timestamp_log, f, indent=4)
 
     def start_streaming(self):
-        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
-        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only" or timeslot_type == "Gathertown Only":
+        if not self.is_livestreamed():
             print("Not streaming Zoom/Discord only event")
             return
+
         computer = self.timeslot_entry(0, "Computer").value
         if "Manual Stream" in self.special_notes():
             print("Stream for {} must be assigned to computer {} and advanced manually".format(
@@ -500,8 +505,7 @@ class Session:
         self.record_stream_update_timestamp([start_transition_call, end_transition_call])
 
     def stop_streaming(self):
-        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
-        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only" or timeslot_type == "Gathertown Only":
+        if not self.is_livestreamed():
             print("No stream to stop for Zoom/Discord only event")
             return
 

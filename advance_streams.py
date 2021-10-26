@@ -59,11 +59,15 @@ for k, v in day.get_sessions(False).items():
 print("=" * 10 + "\nPreview:")
 print("Will end:")
 for s in end_sessions:
+    if not s.is_livestreamed():
+        continue
     print(s.event_session_title())
     print("-----")
 
 print("Will start:")
 for s in start_sessions:
+    if not s.is_livestreamed():
+        continue
     print(s.event_session_title())
     print("-----")
 
