@@ -50,6 +50,10 @@ print("Advancing streams to broadcasts whose sessions start in the interval [{},
 end_sessions = []
 start_sessions = []
 for k, v in day.get_sessions(False).items():
+    if not v.is_livestreamed():
+        print(f"Skipping non-livestreamed session {v.event_session_title()}")
+        continue
+
     time = v.session_time()
     if time[1] >= time_end and time[1] <= time_start:
         end_sessions.append(v)
@@ -59,15 +63,11 @@ for k, v in day.get_sessions(False).items():
 print("=" * 10 + "\nPreview:")
 print("Will end:")
 for s in end_sessions:
-    if not s.is_livestreamed():
-        continue
     print(s.event_session_title())
     print("-----")
 
 print("Will start:")
 for s in start_sessions:
-    if not s.is_livestreamed():
-        continue
     print(s.event_session_title())
     print("-----")
 
