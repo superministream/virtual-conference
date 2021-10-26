@@ -393,7 +393,6 @@ class Session:
             os.makedirs("./timestamps", exist_ok=True)
         timestamp_file = "./timestamps/" + self.timeslot_entry(0, "Session ID").value + ".json"
         timestamp_log = []
-        print(time.time())
         if os.path.isfile(timestamp_file):
             with open(timestamp_file, "r") as f:
                 timestamp_log = json.load(f)
