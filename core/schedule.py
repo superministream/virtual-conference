@@ -430,7 +430,7 @@ class Session:
         # and will simply exit when we check the live stream status and see that it's already live.
 
         # Attach the stream to the broadcast
-        print(f"Attaching stream '{stream_key}' to '{self.youtube_broadcast_id()}'")
+        print(f"Attaching stream '{stream_key}' to Youtube broadcast '{self.youtube_broadcast_id()}'")
         self.auth.youtube.liveBroadcasts().bind(
             id=self.youtube_broadcast_id(),
             part="status",
@@ -443,7 +443,7 @@ class Session:
             "stream_key": stream_key,
             "page_url": self.timeslot_entry(0, "Youtube Broadcast").value
         }
-        print(f"Attaching stream '{stream_key}' to '{self.get_zoom_meeting_id()}'")
+        print(f"Attaching stream '{stream_key}' to Zoom meeting '{self.get_zoom_meeting_id()}'")
         add_livestream = requests.patch("https://api.zoom.us/v2/meetings/{}/livestream".format(
             self.get_zoom_meeting_id()), json=livestream_info, headers=self.auth.zoom)
         print(add_livestream)
