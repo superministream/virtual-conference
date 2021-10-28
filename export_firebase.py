@@ -127,6 +127,7 @@ for d in conference_days:
         if v.timeslot_entry(0, "Youtube Broadcast").value:
             livestream_youtubeid = schedule.match_youtube_id(v.timeslot_entry(0, "Youtube Broadcast").value)
 
+        live_caption_url = v.timeslot_entry(0, "Live Captions URL").value
 
         # And a live opening by the chair or presenters
         # if the first time slot is an "opening", don't generate a redundant opening
@@ -135,6 +136,8 @@ for d in conference_days:
                 "live": True,
                 "title": "Opening",
                 "state": "WATCHING",
+                "has_live_captions": live_caption_url != None,
+                "live_captions_url": live_caption_url,
                 "youtubeId": livestream_youtubeid
             })
 
@@ -173,8 +176,6 @@ for d in conference_days:
                 })
 
             prev_time_slot_end = timeslot_time[1]
-
-            live_caption_url = v.timeslot_entry(i, "Live Captions URL").value
 
             time_slot_info = {
                 "title": timeslot_title,
