@@ -235,6 +235,8 @@ for d in conference_days:
                     "state": "QA",
                     "youtubeId": livestream_youtubeid,
                     "slido_label": timeslot_uid,
+                    "has_live_captions": live_caption_url != None,
+                    "live_captions_url": live_caption_url,
                     "notes": f"archive Q&A using slido label"
                 }
                 if video_length != 0:
