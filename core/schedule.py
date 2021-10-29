@@ -348,6 +348,11 @@ class Session:
             return timedelta(minutes=15)
         return timedelta(minutes=0)
 
+    def is_livestreamed(self):
+        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
+        return timeslot_type != "Zoom Only" and timeslot_type != "Discord Only" \
+            and timeslot_type != "Gathertown Only"
+
     def special_notes(self):
         notes = set()
         for t in range(0, len(self.timeslots)):
@@ -387,11 +392,28 @@ class Session:
         ).execute()
         return response["items"][0]["liveStreamingDetails"]
 
+    # Record one or more stream update time stamps to the file
+    def record_stream_update_timestamp(self, timestamps):
+        if not os.path.isdir("./timestamps"):
+            os.makedirs("./timestamps", exist_ok=True)
+        timestamp_file = "./timestamps/" + self.timeslot_entry(0, "Session ID").value + ".json"
+        timestamp_log = []
+        if os.path.isfile(timestamp_file):
+            with open(timestamp_file, "r") as f:
+                timestamp_log = json.load(f)
+
+        timestamp_log.append({
+            "update": format_time(datetime.now().astimezone()),
+            "timestamps": timestamps
+        })
+        with open(timestamp_file, "w") as f:
+            json.dump(timestamp_log, f, indent=4)
+
     def start_streaming(self):
-        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
-        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only" or timeslot_type == "Gathertown Only":
+        if not self.is_livestreamed():
             print("Not streaming Zoom/Discord only event")
             return
+
         computer = self.timeslot_entry(0, "Computer").value
         if "Manual Stream" in self.special_notes():
             print("Stream for {} must be assigned to computer {} and advanced manually".format(
@@ -408,7 +430,7 @@ class Session:
         # and will simply exit when we check the live stream status and see that it's already live.
 
         # Attach the stream to the broadcast
-        print(f"Attaching stream '{stream_key}' to '{self.youtube_broadcast_id()}'")
+        print(f"Attaching stream '{stream_key}' to Youtube broadcast '{self.youtube_broadcast_id()}'")
         self.auth.youtube.liveBroadcasts().bind(
             id=self.youtube_broadcast_id(),
             part="status",
@@ -421,7 +443,7 @@ class Session:
             "stream_key": stream_key,
             "page_url": self.timeslot_entry(0, "Youtube Broadcast").value
         }
-        print(f"Attaching stream '{stream_key}' to '{self.get_zoom_meeting_id()}'")
+        print(f"Attaching stream '{stream_key}' to Zoom meeting '{self.get_zoom_meeting_id()}'")
         add_livestream = requests.patch("https://api.zoom.us/v2/meetings/{}/livestream".format(
             self.get_zoom_meeting_id()), json=livestream_info, headers=self.auth.zoom)
         print(add_livestream)
@@ -443,9 +465,9 @@ class Session:
             print(start_zoom_stream.text)
             sys.exit(1)
 
-        # Wait about 5s for the Zoom stream to connect, though it seems to be instant
-        print("Sleeping 5s for Zoom live stream to begin")
-        time.sleep(5)
+        # Wait about 9s for the Zoom stream to connect, though it seems to be instant
+        print("Sleeping 8s for Zoom live stream to begin")
+        time.sleep(8)
 
         broadcast_status = self.get_broadcast_status()
         # Broadcast could be in the ready state (configured and a stream key was bound),
@@ -471,16 +493,19 @@ class Session:
             print("WARNING: Stream on computer {} (key {}) is active, but not healthy. Health status is {}".format(
                 computer, stream_key, stream_health))
 
-        # Make the broadcast live
+        # Make the broadcast live. Record the start/end times of this call in case
+        # We need to resync the stream
+        start_transition_call = int(time.time())
         self.auth.youtube.liveBroadcasts().transition(
             broadcastStatus="live",
             id=self.youtube_broadcast_id(),
             part="status"
         ).execute()
+        end_transition_call = int(time.time())
+        self.record_stream_update_timestamp([start_transition_call, end_transition_call])
 
     def stop_streaming(self):
-        timeslot_type = self.timeslot_entry(0, "Time Slot Type").value
-        if timeslot_type == "Zoom Only" or timeslot_type == "Discord Only" or timeslot_type == "Gathertown Only":
+        if not self.is_livestreamed():
             print("No stream to stop for Zoom/Discord only event")
             return
 
@@ -837,12 +862,13 @@ class Session:
                 <li>Discord Channel: <a href="{discord_url}">{discord_url}</a></li>
             </ul>
             <h2>Slido Information</h2>
-            The slido for your session will be <a href="{slido_url}">here</a>.
+            The slido for your session will be <a href="{slido_url}">here</a>. The slido page will also
+            be embedded on the room page and linked from the session page on the virtual site.
             </div>
             """.format(session_title=self.event_session_title(),
                     start=format_time(session_time[0]),
                     schedule=schedule_html,
-                    end=format_time(session_time[1]), chairs=" ".join(chairs),
+                    end=format_time(session_time[1]), chairs=", ".join(chairs),
                     session_id=self.timeslot_entry(0, "Session ID").value,
                     zoom_url=self.timeslot_entry(0, "Zoom URL").value,
                     zoom_id=self.timeslot_entry(0, "Zoom Meeting ID").value,
@@ -860,7 +886,7 @@ class Session:
     # to the tutorial organizers with all the information
     # logo_image is the optional byte array of the image to attach and inline at
     # the bottom of the email
-    def email_contributors(self, logo_image=None):
+    def email_contributors(self, logo_image=None, cc_recipients=None):
         # Collect the list of emails for people in the session
         recipients = set()
         for t in range(self.num_timeslots()):
@@ -883,12 +909,26 @@ class Session:
         subject = CONFERENCE_NAME + ": {} Contributor and Chair Information".format(self.event_session_title())
 
         email_body = """<p>Dear Contributor, Chair, or Organizer,</p>
-                <p>This email contains information for a
-                conference session below in which you are a contributor, chair, or organizer.
-                You will receive one such email per-session and/or tutorial. Please contact the tech committee
-                with any questions.
-                <b>If you are the contact author, but not the presenter, please forward this immediately to the presenting author.</b>""" + \
-                self.contributor_info_html(zoom_meeting_info)
+            <p>This email contains information for a
+            conference session below in which you are a contributor, chair, or organizer.
+            You will receive one such email per-session and/or tutorial. Please contact the tech committee
+            with any questions.
+            </p>
+            <p>
+            <b>If you are the contact author, but not the presenter, please forward this
+            immediately to the presenting author.</b>
+            </p>
+            <p>
+            <b>Note for Panels:</b> Panel organizers, please forward this email on to your panelists.
+            </p>
+            <p>
+            <b>Note for Workshop/Associated event organizers:</b> Please forward this email on to presenters
+            and organizers if any are missing who need this Zoom information. If attendees will join your event,
+            the Zoom information will be shown on the VIS website. <b>Do not distribute the Zoom information
+            publicly</b>
+            </p>
+            """ + \
+            self.contributor_info_html(zoom_meeting_info)
 
         # Generate the ICS calendar event attachment
         calendar = self.make_calendar(with_setup_time=True, zoom_info=zoom_meeting_info)
@@ -917,7 +957,7 @@ class Session:
             discord_url=self.timeslot_entry(0, "Discord Link").value)
 
         send_html_email(subject, email_body, list(recipients), self.auth.email,
-                alternative_text=alternative_text, attachments=attachments)
+                cc_recipients=cc_recipients, alternative_text=alternative_text, attachments=attachments)
         return len(recipients)
 
     def discord_embed_dict(self):
@@ -948,6 +988,13 @@ class Session:
                 "value": self.timeslot_entry(0, "Chair(s)").value.replace("|", ", "),
                 "inline": False
             })
+
+        track = self.get_track()
+        embed["fields"].append({
+            "name": "Room link",
+            "value": f"https://virtual.ieeevis.org/year/2021/room_room{track}.html",
+            "inline": False
+        })
 
         for t in self.timeslots:
             time = self.day.entry(t, "Time Slot").value

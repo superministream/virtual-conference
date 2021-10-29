@@ -27,7 +27,7 @@ event_calendars = {}
 
 paper_list = {}
 all_sessions = {}
-conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
+conference_days = ["demoday-sv", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for d in conference_days:
     print(d)
     day = database.get_day(d)
@@ -80,26 +80,29 @@ for d in conference_days:
             with open(os.path.join(output_dir, session_id + ".ics"), "w", encoding="utf8") as f:
                 f.write(str(calendar))
 
+        computer_info = database.get_computer(v.get_track())
+
         session_info = {
             "title": session_title,
             "session_id": session_id,
-            "track": "room" + str(v.timeslot_entry(0, "Computer").value),
+            "track": "room" + str(v.get_track()),
             "schedule_image": session_id + ".png",
             "chair": [],
             "organizers": organizers.split("|") if organizers else [],
             "time_start": schedule.format_time_iso8601_utc(session_time[0]),
             "time_end": schedule.format_time_iso8601_utc(session_time[1]),
-            # TODO: We won't have this here anymore I think
             "discord_category": discord_category,
             "discord_channel": discord_channel,
             "discord_channel_id": discord_channel_id,
+            "discord_link": computer_info["Discord Link"].value,
+            "slido_link": v.get_slido_url(),
             "youtube_url": v.timeslot_entry(0, "Youtube Broadcast").value,
             "zoom_meeting": zoom_meeting,
             "zoom_password": zoom_password,
             "ff_link": ff_link,
             "ff_playlist": ff_playlist if ff_playlist else "",
             "gathertown_event": v.timeslot_entry(0, "Time Slot Type").value == "Gathertown Only",
-            "time_slots": []
+            "time_slots": [],
         }
 
         chairs = set()
@@ -230,6 +233,7 @@ for r in poster_table.items():
         "event": r["Event"].value,
         "discord_channel": r["Discord Channel ID"].value,
         "has_image": r["Image File"].value != None,
+        "has_summary_pdf": r["Summary PDF"].value != None,
         "poster_award": poster_award
     }
     all_posters[poster_uid] = poster_info
@@ -244,6 +248,16 @@ for r in poster_table.items():
 
             out_pdf_file = os.path.join(output_dir, f"{poster_uid}.pdf")
             shutil.copy(pdf_file, out_pdf_file)
+
+        summary_pdf_file = r["Summary PDF"].value
+        if summary_pdf_file:
+            summary_pdf_file = os.path.join(output_asset_dir, summary_pdf_file)
+            if not os.path.isfile(summary_pdf_file):
+                print(f"Error! Failed to find poster PDF {summary_pdf_file}")
+                continue
+
+            out_summary_pdf_file = os.path.join(output_dir, f"{poster_uid}-summary.pdf")
+            shutil.copy(summary_pdf_file, out_summary_pdf_file)
 
     if export_images:
         image_file = r["Image File"].value

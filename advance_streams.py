@@ -50,15 +50,37 @@ print("Advancing streams to broadcasts whose sessions start in the interval [{},
 end_sessions = []
 start_sessions = []
 for k, v in day.get_sessions(False).items():
+    if not v.is_livestreamed():
+        print(f"Skipping non-livestreamed session {v.event_session_title()}")
+        continue
+
     time = v.session_time()
     if time[1] >= time_end and time[1] <= time_start:
         end_sessions.append(v)
     elif time[0] >= time_end and time[0] <= time_start:
         start_sessions.append(v)
 
+print("=" * 10 + "\nPreview:")
+print("Will end:")
+for s in end_sessions:
+    print(s.event_session_title())
+    print("-----")
+
+print("Will start:")
+for s in start_sessions:
+    print(s.event_session_title())
+    print("-----")
+
+print("=" * 10)
+
+ok = input("Proceed? (y/n): ")
+if ok == "n":
+    print("Cancelling")
+    sys.exit(0)
+
 print("=" * 10 + "\nEnding sessions:")
 for s in end_sessions:
-    print(s)
+    print(s.event_session_title())
     s.stop_streaming()
     non_consent_text = "Does not consent to video recording, Will edit out in post"
     if non_consent_text in s.special_notes():
@@ -68,7 +90,7 @@ for s in end_sessions:
 
 print("=" * 10 + "\nStarting sessions:")
 for s in start_sessions:
-    print(s)
+    print(s.event_session_title())
     s.start_streaming()
     print("-----")
 

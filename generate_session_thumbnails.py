@@ -23,7 +23,7 @@ thumbnail_params = {
 }
 output_dir = sys.argv[5]
 
-conference_days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
+conference_days = ["demoday-sv", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday"]
 for d in conference_days:
     day = database.get_day(d)
     sessions = day.get_sessions(False)

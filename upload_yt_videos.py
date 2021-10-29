@@ -20,7 +20,7 @@ Usage:
 
 arguments = docopt(USAGE)
 
-sheet_name = "monday"
+sheet_name = "friday"
 title_field = "Time Slot Title"
 authors_field = "Authors"
 description_field = "Abstract"

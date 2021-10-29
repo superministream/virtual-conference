@@ -1,9 +1,5 @@
 import sys
 import time
-import json
-import discord
-from datetime import datetime, timedelta
-from heapq import heappush, heappop
 
 import core.schedule as schedule
 

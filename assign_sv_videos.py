@@ -73,6 +73,7 @@ class Video:
             warnings.append(EncodingWarning.VIDEO_CODEC)
         if video.audio_codec != "AAC":
             warnings.append(EncodingWarning.AUDIO_CODEC)
+        # TODO: Videos should also be checked for a min length
         if video.length > max_talk_length:
             warnings.append(EncodingWarning.VIDEO_TOO_LONG)
 
@@ -233,6 +234,7 @@ for i in range(len(volunteers)):
             if subtitles_path:
                 archive.write(subtitles_path, arcname=subtitles_relpath)
 
+    # TODO: Generate row of "Needs escalation or fixing"
     last_row = ws.table.max_row
     ws.entry(last_row + 1, 1).value = "Total Task Time: {}minutes".format(round(task_length / 60))
     ws.entry(last_row + 1, 1).style = "Headline 1"
