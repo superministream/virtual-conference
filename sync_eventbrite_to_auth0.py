@@ -154,11 +154,14 @@ def get_new_eventbrite(session):
     # Page indices start at 1 inclusive
     for i in range(1, last_page + 1):
         print(f"Fetching eventbrite registrations page {i} of {last_page}")
-        time.sleep(0.1)
         args = {
             'page': i
         }
         attendees = session.eventbrite.get(attendees.resource_uri, args)
+        if not "attendees" in attendees:
+            print("Error fetching eventbrite response?")
+            print(attendees)
+            break
         for a in attendees["attendees"]:
             eventbrite_registrations.append((
                 a["profile"]["name"],
@@ -247,7 +250,7 @@ def get_all(transmit_to_auth0, session, logo_attachment, max_new=-1):
             token = session.get_auth0_token()
             send_to_auth0(session, file_name, token, session.auth0["connection_id"])
             with open("registered.json", "w") as f:
-                json.dump(all_registered, f)
+                json.dump(all_registered, f, indent=4)
     print(f"New registrations processed at {datetime.now()}")
 
 if __name__ == '__main__':
@@ -268,6 +271,6 @@ if __name__ == '__main__':
     while True:
         print("Checking for new registrations")
         get_all(args.auth0, session, logo_attachment, args.limit)
-        time.sleep(10 * 60)
+        time.sleep(15 * 60)
 
 
